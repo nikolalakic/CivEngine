@@ -1,13 +1,14 @@
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QPushButton, QWidget
-
+from ConcreteElementsWindows.complexbending import ComplexBending
 
 class ConcreteWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setMinimumSize(QSize(800, 600))
-        self.setWindowTitle('Steel elements')
+        self.complexbending_window = None
+        self.setWindowTitle('Concrete elements')
         layout = QVBoxLayout()
         choose_text = QLabel('Choose one from options:')
         font = QFont()
@@ -27,8 +28,19 @@ class ConcreteWindow(QMainWindow):
             button.setFixedSize(800, 50)
             button.setStyleSheet("text-align: center")
             layout.addWidget(button)
+            if button_text == "Complex bending":
+                button.clicked.connect(self.complexbending_click)
 
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
+
+    def complexbending_click(self):
+        sender = self.sender()
+        if sender.text() == "Complex bending" and self.complexbending_window == None:
+            self.complexbending_window = ComplexBending()
+            self.complexbending_window.show()
+        else:
+            self.complexbending_window.close()
+            self.complexbending_window = None
 
