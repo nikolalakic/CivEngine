@@ -12,10 +12,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setMinimumSize(QSize(800, 600))
         self.setWindowTitle('CivEngine')
-        self.concrete_window = None
-        self.steel_window = None
-        self.soil_window = None
-        self.wood_window = None
+        self.concrete_window = ConcreteWindow()
+        self.steel_window = SteelWindow()
+        self.soil_window = SoilWindow()
+        self.wood_window = WoodWindow()
 
         layout = QVBoxLayout()
 
@@ -49,40 +49,33 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
+    def closeEvent(self, event):
+        self.concrete_window.close()
+        self.steel_window.close()
+        self.wood_window.close()
+        self.soil_window.close()
+        event.accept()
+
     def concrete_click(self):
-        sender = self.sender()
-        if sender.text() == "Concrete elements" and self.concrete_window == None:
-            self.concrete_window = ConcreteWindow()
-            self.concrete_window.show()
+        if self.concrete_window.isVisible():
+            self.concrete_window.hide()
         else:
-            self.concrete_window.close()
-            self.concrete_window = None
+            self.concrete_window.show()
 
     def steel_click(self):
-        sender = self.sender()
-        if sender.text() == "Steel elements and joints" and self.steel_window is None:
-            self.steel_window = SteelWindow()
-            self.steel_window.show()
+        if self.steel_window.isVisible():
+            self.steel_window.hide()
         else:
-            self.steel_window.close()
-            self.steel_window = None
+            self.steel_window.show()
 
     def wood_click(self):
-        sender = self.sender()
-        if sender.text() == "Wood elements and joints" and self.wood_window is None:
-            self.wood_window = WoodWindow()
-            self.wood_window.show()
+        if self.wood_window.isVisible():
+            self.wood_window.hide()
         else:
-            self.wood_window.close()
-            self.wood_window = None
-
+            self.wood_window.show()
 
     def soil_click(self):
-        sender = self.sender()
-        if sender.text() == "Soil" and self.soil_window is None:
-            self.soil_window = SoilWindow()
-            self.soil_window.show()
+        if self.soil_window.isVisible():
+            self.soil_window.hide()
         else:
-            self.soil_window.close()
-            self.soil_window = None
-
+            self.soil_window.show()
