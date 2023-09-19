@@ -1,9 +1,12 @@
-from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import QSize, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QPushButton, QWidget
 from ConcreteElementsWindows.complexbending import ComplexBending
 
+
 class ConcreteWindow(QMainWindow):
+    closed = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.setMinimumSize(QSize(800, 600))
@@ -17,9 +20,11 @@ class ConcreteWindow(QMainWindow):
         choose_text.setFixedSize(800, 30)
         choose_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(choose_text)
+        self.closed.connect(self.onClosed)
 
         buttons = ["Complex bending", "Shear and torsion", "Slab punching check", "Deflection by indirect method",
-                   "Stress check", "Column bracing", "Wall bracing", "Bending moment capacity", "Moment - curvature diagrams"]
+                   "Stress check", "Column bracing", "Wall bracing", "Bending moment capacity",
+                   "Moment - curvature diagrams"]
         for i, button_text in enumerate(buttons):
             button = QPushButton(button_text)
             button_font = QFont()
@@ -37,10 +42,17 @@ class ConcreteWindow(QMainWindow):
 
     def complexbending_click(self):
         sender = self.sender()
-        if sender.text() == "Complex bending" and self.complexbending_window == None:
+        if self.complexbending_window is None and sender.text() == "Complex bending":
             self.complexbending_window = ComplexBending()
             self.complexbending_window.show()
         else:
             self.complexbending_window.close()
             self.complexbending_window = None
 
+    def closeEvent(self, event):
+        self.closed.emit()
+        event.accept()
+
+    @pyqtSlot()
+    def onClosed(self):
+        self.close()

@@ -57,10 +57,14 @@ class MainWindow(QMainWindow):
         event.accept()
 
     def concrete_click(self):
-        if self.concrete_window.isVisible():
-            self.concrete_window.hide()
-        else:
-            self.concrete_window.show()
+        if self.concrete_window is None or not self.concrete_window.isVisible():
+            self.concrete_window = ConcreteWindow()
+            self.concrete_window.closed.connect(self.show_main_window)
+        self.hide()
+        self.concrete_window.show()
+
+    def show_main_window(self):
+        self.show()  # Show the MainWindow
 
     def steel_click(self):
         if self.steel_window.isVisible():
