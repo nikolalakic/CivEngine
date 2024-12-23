@@ -5,16 +5,12 @@ import math
 
 class BetonIArmatura:
     def __init__(self):
-        #self.fck = int(input('Unesi karakterističnu čvrstoću betona fck [MPa]: '))
-        self.fck = 25
-        #b = float(input('Unesi sirinu preseka b [cm]: '))
-        b = 70
+        self.fck = int(input('Unesi karakterističnu čvrstoću betona fck [MPa]: '))
+        b = float(input('Unesi sirinu preseka b [cm]: '))
         self.b = b / 100  # [m]
-        #h = float(input('Unesi visinu preseka h [cm]: '))
-        h = 60
+        h = float(input('Unesi visinu preseka h [cm]: '))
         self.h = h / 100  # [m]
-        #d1 = float(input('Unesi rastojanje zategnute armature od zategnute ivice betona d1 [cm]: '))
-        d1 = 5.5
+        d1 = float(input('Unesi rastojanje zategnute armature od zategnute ivice betona d1 [cm]: '))
         self.d1 = d1 / 100  # [m]
         self.A = self.b * self.h  # Površina preseka [m^2]
         self.u = 2 * (self.b + self.h)  # Obim preseka za pravougaone preseke
@@ -109,8 +105,7 @@ class BetonIArmatura:
         return Asl
 
     def secnost(self):
-        #m = int(input('Unesi sečnost za smicanje posmatranog preseka m [m=2 ili m=4]: '))
-        m = 4
+        m = int(input('Unesi sečnost za smicanje posmatranog preseka m [m=2 ili m=4]: '))
         return m
 
     def t_eff(self):
