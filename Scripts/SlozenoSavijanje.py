@@ -53,7 +53,7 @@ def maliekscentricitet (d1):
                 if abs(deltaM) < 5 and abs(deltaN) < 5:
                     indikator = 1
                     break
-    if ec2 == 3.5 and abs(delta(M))> 50 and abs(deltaN) > 50:
+    if ec2 == 3.5 and abs(deltaM)> 50 and abs(deltaN) > 50:
         print('\nPostoji i zategnuta armatura u preseku! Pogledaj dijagrame interakcije!')
     else:
         As = max(As1, As2)
