@@ -6,8 +6,8 @@ class Smicanje(BetonIArmatura):
     def __init__(self):
         super().__init__()
         self.VEd = abs(float(input('Unesi silu smicanja VEd [kN]: ')))
-        self.Asl = self.poduzna_armatura()
         self.mv = self.secnost()
+        self.VRd_c = self.minimalna_nosivost_betona_na_smicanje()
 
     def izabrana_povrsina_armature_za_smicanje(self):  # uzeti su samo fi 8, 10, i 12 u obzir
         fi_lista_povrsina = self.fi_lista_povrsina() / math.pow(10, 4)  # m^2
@@ -83,11 +83,10 @@ class Smicanje(BetonIArmatura):
         sr_max = self.maksimalno_poduzno_rastojanje_armature()
         s_rac_lista = self.potrebno_rastojanje_racunske_armature_za_smicanje()
         fi_lista = self.izabrani_precnici_armature_za_smicanje()
-        VRd_c = self.minimalna_nosivost_betona_na_smicanje()
         VRd_max = self.maksimalna_nosivost_betona_na_smicanje()
         sr_min_lista = self.minimalna_povrsina_armature_za_smicanje()
         rezultat = ''
-        if VRd_c < self.VEd <= VRd_max:
+        if self.VRd_c < self.VEd <= VRd_max:
             print('--------------------')
             for s, fi, sr_min in zip(s_rac_lista, fi_lista, sr_min_lista):
                 odgovor = (f'Potrebno rastojanje armature: s = {round(min(s, sr_min, sr_max), 4)*100}'
@@ -98,7 +97,7 @@ class Smicanje(BetonIArmatura):
             print(f'Maksimalno podužno rastojanje armature: sr_max = {round(sr_max, 4) * 100} [cm]')
             print(f'Maksimalno poprečno rastojanje armature: st_max = {round(st_max, 4) * 100} [cm]\n')
             print(f'Maksimalna nosivost pritisnute betonske dijagonale: VRd,max = {round(VRd_max, 2)} kN')
-        elif self.VEd <= VRd_c:
+        elif self.VEd <= self.VRd_c:
             print('--------------------')
             print('Minimalni procenat armiranja!\n')
             for s, fi, sr_min in zip(s_rac_lista, fi_lista, sr_min_lista):
@@ -106,7 +105,7 @@ class Smicanje(BetonIArmatura):
                            f'za prečnik uzengije: \u03C6 = {fi}')
                 rezultat += odgovor + '\n'
             print(f'Sečnost: m = {self.mv}')
-            print(f'Minimalna nosivost betonskog preseka na smicanje VRd,c = {round(VRd_c,2)} kN')
+            print(f'Minimalna nosivost betonskog preseka na smicanje VRd,c = {round(self.VRd_c, 2)} kN')
             print(f'Dodatna zategnuta armatura: \u0394As1 =  {round(delta_As1, 4) * math.pow(10, 4)} [cm^2]')
             print(f'Maksimalno podužno rastojanje armature: sr_max = {round(sr_max, 4) * 100} [cm]')
             print(f'Maksimalno poprečno rastojanje armature: st_max = {round(st_max, 4) * 100} [cm]\n')
