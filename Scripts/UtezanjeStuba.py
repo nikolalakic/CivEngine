@@ -62,6 +62,7 @@ class UtezanjeStuba:
     def Utezanje(self):
         if self.nied > 0.65:
             print('Normalizovana sila \u03BD,Ed je veca od 0.65! Povecaj marku betona ili dimenzije stuba!')
+            print(f'\u03BD,Ed = {self.nied} >= 0.65 = \u03BD,Ed,max!')
             exit()
         elif self.nied <= 0.2 and self.q0 <= 2:
             print('\nPrimenjuju se pravila iz EC2!')
