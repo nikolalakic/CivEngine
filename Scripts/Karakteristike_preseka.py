@@ -99,8 +99,7 @@ class BetonIArmatura:
         return lista
 
     def poduzna_armatura(self):
-        #Asl = float(input('Unesi povrsinu poduzne armature od savijanja u preseku ili rebru Asl [cm^2]: '))
-        Asl = 18.84
+        Asl = float(input('Unesi povrsinu poduzne armature od savijanja u preseku ili rebru Asl [cm^2]: '))
         Asl = Asl / math.pow(10, 4)
         return Asl
 
