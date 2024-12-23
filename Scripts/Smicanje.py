@@ -106,6 +106,7 @@ class Smicanje(BetonIArmatura):
                            f'za prečnik uzengije: \u03C6 = {fi}')
                 rezultat += odgovor + '\n'
             print(f'Sečnost: m = {self.mv}')
+            print(f'Minimalna nosivost betonskog preseka na smicanje VRd,c = {round(VRd_c,2)} kN')
             print(f'Dodatna zategnuta armatura: \u0394As1 =  {round(delta_As1, 4) * math.pow(10, 4)} [cm^2]')
             print(f'Maksimalno podužno rastojanje armature: sr_max = {round(sr_max, 4) * 100} [cm]')
             print(f'Maksimalno poprečno rastojanje armature: st_max = {round(st_max, 4) * 100} [cm]\n')
