@@ -221,7 +221,7 @@ class DijagramInterakcije:
         plt.figure(figsize=figsize)
         plt.xlabel('\u03BDRd')
         plt.ylabel('\u03BCRd')
-        plt.title('Dijagram interakcije')
+        plt.title('Dijagram interakcije (\u03C9)')
 
         # Osnovne linije
         plt.plot(centricni_pritisak[0], centricni_pritisak[1], color='green',
@@ -244,6 +244,12 @@ class DijagramInterakcije:
                  label=f'As2 = {1 - self.k} * As', linestyle='-', color='black', linewidth=2, marker='>', markersize=10)
         plt.plot([], [],
                  label=f'fck = {self.fck} MPa', linestyle='-', color='black', linewidth=2, marker='*', markersize=10)
+        plt.plot([], [],
+                 label=f'As1 = {self.k} * \u03C9 * b * h * fcd/fyd ', linestyle='-', color='black', linewidth=2,
+                 marker='>', markersize=10)
+        plt.plot([], [],
+                 label=f'As2 = {1 - self.k} * \u03C9 * b * h * fcd/fyd ', linestyle='-', color='black', linewidth=2,
+                 marker='>', markersize=10)
 
         niz_x = np.array([centricni_pritisak[0],
                           granica_malog_ekscentriciteta[0],
