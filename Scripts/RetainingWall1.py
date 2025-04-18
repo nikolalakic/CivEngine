@@ -130,10 +130,11 @@ class RetainingWall1: # Rankin theory
         mu = self.gamma_g * mg + self.gamma_q * mq
         qed_max = vu/f + mu/w
         if qed_max > self.sigma_rd:
-            a = ("Maximum gross soil stress exceeded....FAIL!\n"
+            a = ("Maximum gross soil stress exceeded....FAIL!\n "
                   f"qed_max = {round(qed_max,1)} [kN/m] <= sigma_Rd = {round(self.sigma_rd, 1)} [kN/m]\n")
         else:
-            a = (f"Maximum gross soil stress....OK!\n qed_max = {round(qed_max,1)} [kN/m]"
+            a = (f"Maximum gross soil stress....OK!\n "
+                 f"qed_max = {round(qed_max,1)} [kN/m]"
                  f" <= sigma_Rd = {round(self.sigma_rd, 1)} [kN/m]\n")
         return a
 
@@ -148,13 +149,13 @@ class RetainingWall1: # Rankin theory
         mu = self.gamma_g * mg + self.gamma_q * mq
         qed_min = vu/f - mu/w
         if qed_min < 0 or qed_min >= self.sigma_rd:
-            a = ("Tension in foundation line or maximum soil stress exceeded....FAIL!\n"
+            a = ("Tension in foundation line or maximum soil stress exceeded....FAIL!\n "
                   f"qed_min = {round(qed_min,1)} [kN/m] >= sigma_Rd = {round(self.sigma_rd, 1)} [kN/m]\n")
         else:
-            a = ("Minimum gross soil check....OK!\n"
+            a = ("Minimum gross soil check....OK!\n "
                  f"qed_min = {round(qed_min,1)} [kN/m]"
                  " >= 0\n"
-                 f"qed_min = {round(qed_min,1)} [kN/m] <= sigma_Rd = {round(self.sigma_rd, 1)} [kN/m]\n")
+                 f" qed_min = {round(qed_min,1)} [kN/m] <= sigma_Rd = {round(self.sigma_rd, 1)} [kN/m]\n")
         return a
 
     def overturning_stability_check(self):
@@ -173,13 +174,13 @@ class RetainingWall1: # Rankin theory
         med_stb = gamma_g_stb * (gw * (self.ts/2 + bt) + gs1 * (bh/2 + self.ts + bt) + gf * (self.B/2)) + gamma_q_stb * vq * (bh/2 + self.ts + bt)
         med_dstb = gamma_g_dstb * (rhg * self.H/3) + gamma_q_dstb * (rhq * self.H/2)
         if med_dstb/med_stb <= 1:
-            a = ("Overturning stability check....OK!\n"
+            a = ("Overturning stability check....OK!\n "
                   f"med_dstb/med_stb = {round(med_dstb/med_stb, 2)} <= 1"
-                  " [kNm/m]\n")
+                  "\n")
         else:
-            a = ("Overturning stability check....FAIL!\n"
+            a = ("Overturning stability check....FAIL!\n "
                   f"med_dstb/med_stb = {round(med_dstb/med_stb, 2)} > 1"
-                  " [kNm/m]\n")
+                  " \n")
         return a
 
     def sliding_stability_check(self):
@@ -193,13 +194,11 @@ class RetainingWall1: # Rankin theory
         hd = self.gamma_g * hg + self.gamma_q * hq
         h_rd = vd * math.tan(phi_prime_d2)/gamma_rh
         if hd/h_rd > 1:
-            a = ("Sliding stability check....FAIL!\n"
-                 f"hd/h_rd = {round(hd / h_rd, 2)} > 1"
-                 " [kN/m]\n")
+            a = ("Sliding stability check....FAIL!\n "
+                 f"hd/h_rd = {round(hd / h_rd, 2)} > 1")
         else:
-            a = ("Sliding stability check....OK!\n"
-                 f"hd/h_rd = {round(hd / h_rd, 2)} <= 1"
-                 " [kN/m]\n")
+            a = ("Sliding stability check....OK!\n "
+                 f"hd/h_rd = {round(hd / h_rd, 2)} <= 1")
         return a
 
     def overall_check(self):
