@@ -2,49 +2,32 @@ import math
 
 class RetainingWall1: # Rankin theory
     def __init__(self):
-        self.ts = 0.25 # [m]
-        self.tb = 0.40 # [m]
-        self.B = 2 # [m]
-        self.h = 2.5 # [m]
+        self.ts = 0.7 # [m]
+        self.tb = 0.7 # [m]
+        self.B = 4.5 # [m]
+        self.h = 6 # [m]
         self.gamma_k_1 = 19 # [kN/m^3]
         #self.ck1 = 0
-        self.phi_k_1 = 25 # [degrees]
+        self.phi_k_1 = 35 # [degrees]
         self.gamma_k_2 = 18  # [kN/m^3]
         #self.ck2 = 5
-        self.phi_k_2 = 25  # [degrees]
+        self.phi_k_2 = 26  # [degrees]
         self.Df = 1.2 # [m]
         self.gamma_concrete = 25 # [kN/m^3]
-        self.q = 5 # [kN/m]
+        self.q = 10 # [kN/m]
         self.H = self.tb + self.h
-        self.sigma_rd = 150 # [kN/m^2]
+        self.sigma_rd = 278.5 # [kN/m^2]
         self.gamma_g = 1.35
         self.gamma_q = 1.5
         self.gamma_g_fav = 1
 
-    def phi_prime_d1(self):
-        gamma_prime_phi = 1
-        phi_prime_d_1 = math.radians(self.phi_k_1)/gamma_prime_phi
-        return phi_prime_d_1
-
-    def phi_prime_d1_stability(self):
-        gamma_prime_phi = 1.25
-        phi_k_1 = math.radians(self.phi_k_1)
-        phi_prime_d_1 = math.atan(math.tan(phi_k_1)/gamma_prime_phi)
-        return phi_prime_d_1
-
-    def phi_prime_d2(self):
-        gamma_prime_phi = 1
-        phi_prime_d_2 = math.radians(self.phi_k_2)/gamma_prime_phi
-        return phi_prime_d_2
-
-    def phi_prime_d2_stability(self):
-        gamma_prime_phi = 1.25
-        phi_k_2 = math.radians(self.phi_k_2)
-        phi_prime_d_2 = math.atan(math.tan(phi_k_2)/gamma_prime_phi)
-        return phi_prime_d_2
+    def _phi_prime(self, phi, stability=False):
+        gamma_prime_phi = 1.25 if stability else 1
+        phi_rad = math.radians(phi)
+        return math.atan(math.tan(phi_rad) / gamma_prime_phi)
 
     def bh(self):
-        phi_prime_d_1 = self.phi_prime_d1()
+        phi_prime_d_1 = self._phi_prime(self.phi_k_1)
         # Wide heel check
         bh = self.h * math.tan(math.radians(45) - phi_prime_d_1/2)
         bh = math.ceil(bh * 10)/10
@@ -79,43 +62,23 @@ class RetainingWall1: # Rankin theory
         q = self.q * bh
         return q
 
-    def coefficient_ka(self):
-        phi_prime_d1 = self.phi_prime_d1()
-        ka = math.pow(math.tan(math.pi/4 - phi_prime_d1/2), 2)
+    def coefficient_ka(self, stability=False):
+        """Calculate the active earth pressure coefficient (Ka) with an optional stability factor."""
+        phi_prime_d1 = self._phi_prime(self.phi_k_1, stability)
+        ka = math.pow(math.tan(math.pi / 4 - phi_prime_d1 / 2), 2)
         return ka
 
-    def coefficient_ka_stability(self):
-        phi_prime_d1 = math.atan(math.tan(self.phi_prime_d1())/1.25)
-        ka = math.pow(math.tan(math.pi/4 - phi_prime_d1/2), 2)
-        return ka
-
-    def rhg(self):
-        ka = self.coefficient_ka()
-        #hg1 = ka * self.gamma_k_1 * self.h
+    def rhg(self, stability=False):
+        """Calculate the moment due to the weight of the soil behind the wall, with optional stability factor."""
+        ka = self.coefficient_ka(stability)
         hg2 = ka * self.gamma_k_1 * self.H
-        rhg = hg2 * self.H/2
-        return rhg
+        return hg2 * self.H / 2
 
-    def rhg_stability(self):
-        ka = self.coefficient_ka_stability()
-        #hg1 = ka * self.gamma_k_1 * self.h
-        hg2 = ka * self.gamma_k_1 * self.H
-        rhg = hg2 * self.H/2
-        return rhg
-
-    def rhq(self):
-        ka = self.coefficient_ka()
-        hq1 = ka * self.q
-        hq2 = hq1
-        rhq = hq2 * self.H
-        return rhq
-
-    def rhq_stability(self):
-        ka = self.coefficient_ka_stability()
-        hq1 = ka * self.q
-        hq2 = hq1
-        rhq = hq2 * self.H
-        return rhq
+    def rhq(self, stability=False):
+        """Calculate the moment due to the distributed load, with optional stability factor."""
+        ka = self.coefficient_ka(stability)
+        hq2 = ka * self.q
+        return hq2 * self.H
 
     def mg(self):
         bt = self.bt()
@@ -205,8 +168,8 @@ class RetainingWall1: # Rankin theory
         gw = self.gw()
         gs1 = self.gs1()
         vq = self.vq()
-        rhg = self.rhg_stability()
-        rhq = self.rhq_stability()
+        rhg = self.rhg(stability=True)
+        rhq = self.rhq(stability=True)
         med_stb = gamma_g_stb * (gw * (self.ts/2 + bt) + gs1 * (bh/2 + self.ts + bt) + gf * (self.B/2)) + gamma_q_stb * vq * (bh/2 + self.ts + bt)
         med_dstb = gamma_g_dstb * (rhg * self.H/3) + gamma_q_dstb * (rhq * self.H/2)
         if med_dstb/med_stb <= 1:
@@ -220,7 +183,7 @@ class RetainingWall1: # Rankin theory
         return a
 
     def sliding_stability_check(self):
-        phi_prime_d2 = self.phi_prime_d2()
+        phi_prime_d2 = self._phi_prime(self.phi_k_2)
         gamma_rh = 1.1
         vg = self.vg()
         vq = self.vq()
