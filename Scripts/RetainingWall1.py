@@ -4,8 +4,9 @@ class RetainingWall1: # Rankin theory
     def __init__(self):
         self.ts = 0.7 # [m]
         self.tb = 0.7 # [m]
-        self.B = 4.5 # [m]
         self.h = 6 # [m]
+        self.bt = 0.6 # [m]
+        self.B = 4.5 # [m]
         self.gamma_k_1 = 19 # [kN/m^3]
         #self.ck1 = 0
         self.phi_k_1 = 35 # [degrees]
@@ -33,23 +34,28 @@ class RetainingWall1: # Rankin theory
         bh = math.ceil(bh * 10)/10
         return bh
 
-    def bt(self): # Leg width
+
+    def _B(self):
         bh = self.bh()
-        bt = self.B - self.ts - bh
-        return bt
+        b_final = bh + self.bt + self.ts
+        if b_final < self.B:
+            return self.B
+        else:
+            return b_final
+
 
     def gw(self): # Weight of wall
         gw = self.h * self.ts * self.gamma_concrete
         return gw
 
     def gf(self): # Weight of foundation
-        gf = self.B * self.tb * self.gamma_concrete
+        B = self._B()
+        gf = B * self.tb * self.gamma_concrete
         return gf
 
     def gs2(self): # Weight of soil above leg (disregarded in this case)
-        bt = self.bt()
         t = self.Df - self.tb
-        gs1 = bt * t * self.gamma_k_2
+        gs1 = self.bt * t * self.gamma_k_2
         return gs1
 
     def gs1(self): # Weight of soil above heel
@@ -81,20 +87,21 @@ class RetainingWall1: # Rankin theory
         return hq2 * self.H
 
     def mg(self):
-        bt = self.bt()
+        B = self._B()
         bh = self.bh()
         gw = self.gw()
         gs1 = self.gs1()
         gf = self.gf()
         rhg = self.rhg()
-        mg = gw * (self.B/2 - bt - self.ts/2) - gs1 * (self.B/2 - bh/2) + rhg * self.H/3 + gf * 0
+        mg = gw * (B/2 - self.bt - self.ts/2) - gs1 * (B/2 - bh/2) + rhg * self.H/3 + gf * 0
         return mg
 
     def mq(self):
+        B = self._B()
         bh = self.bh()
         rhq = self.rhq()
         q = self.q_load()
-        mq = rhq * self.H/2 - q * (self.B/2 - bh/2)
+        mq = rhq * self.H/2 - q * (B/2 - bh/2)
         return mq
 
     def vg(self):
@@ -124,8 +131,9 @@ class RetainingWall1: # Rankin theory
         vq = self.vq()
         mg = self.mg()
         mq = self.mq()
-        f = self.B * 1 # area of foundation with width of 1m
-        w = math.pow(self.B, 2)/6 * 1
+        B = self._B()
+        f = B * 1 # area of foundation with width of 1m
+        w = math.pow(B, 2)/6 * 1
         vu = self.gamma_g * vg + self.gamma_q * vq
         mu = self.gamma_g * mg + self.gamma_q * mq
         qed_max = vu/f + mu/w
@@ -143,8 +151,9 @@ class RetainingWall1: # Rankin theory
         vq = self.vq()
         mg = self.mg()
         mq = self.mq()
-        f = self.B * 1 # area of foundation with width of 1m
-        w = math.pow(self.B, 2)/6 * 1
+        B = self._B()
+        f = B * 1 # area of foundation with width of 1m
+        w = math.pow(B, 2)/6 * 1
         vu = self.gamma_g * vg + self.gamma_q * vq
         mu = self.gamma_g * mg + self.gamma_q * mq
         qed_min = vu/f - mu/w
@@ -159,19 +168,19 @@ class RetainingWall1: # Rankin theory
         return a
 
     def overturning_stability_check(self):
-        bt = self.bt()
         bh = self.bh()
         gamma_g_stb = 0.9
         gamma_g_dstb = 1.1
         gamma_q_stb = 0
         gamma_q_dstb = 1.5
         gf = self.gf()
+        B = self._B()
         gw = self.gw()
         gs1 = self.gs1()
         vq = self.vq()
         rhg = self.rhg(stability=True)
         rhq = self.rhq(stability=True)
-        med_stb = gamma_g_stb * (gw * (self.ts/2 + bt) + gs1 * (bh/2 + self.ts + bt) + gf * (self.B/2)) + gamma_q_stb * vq * (bh/2 + self.ts + bt)
+        med_stb = gamma_g_stb * (gw * (self.ts/2 + self.bt) + gs1 * (bh/2 + self.ts + self.bt) + gf * (B/2)) + gamma_q_stb * vq * (bh/2 + self.ts + self.bt)
         med_dstb = gamma_g_dstb * (rhg * self.H/3) + gamma_q_dstb * (rhq * self.H/2)
         if med_dstb/med_stb <= 1:
             a = ("Overturning stability check....OK!\n "
