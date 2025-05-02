@@ -11,8 +11,10 @@ class RetainingWall2: # Wide heel
         self.h = 3.2  # [m]
         self.gamma_k_1 = 19 # [kN/m^3]
         self.gamma_k_1_w = 22 # [kN/m^3]
+        self.gamma_prime = self.gamma_k_1_w - 9.807 # [kN/m^3]
         if self.hw1 == 0:
             self.gamma_k_1_w = self.gamma_k_1
+            self.gamma_prime = self.gamma_k_1
         self.hw2 = self.h + self.tb - self.hw1
         self.alpha_c = math.atan((self.b - self.ts) / self.h) # [radians]
         self.H = self.h + self.tb
@@ -32,7 +34,8 @@ class RetainingWall2: # Wide heel
         self.gamma_q = 1.5
         self.gamma_g_fav = 1
 
-    def _phi_prime(self, phi, stability=False):
+    @staticmethod
+    def _phi_prime(phi, stability=False):
         gamma_prime_phi = 1.25 if stability else 1
         phi_rad = math.radians(phi)
         return math.atan(math.tan(phi_rad) / gamma_prime_phi)
@@ -91,7 +94,7 @@ class RetainingWall2: # Wide heel
 
     def w2(self): # Buoyancy
         B = self.B_final()
-        w2 = B * self.hw1 * 9.807
+        w2 = (self.hw1 * 9.807) * B
         return w2
 
     def vq(self):
@@ -121,10 +124,106 @@ class RetainingWall2: # Wide heel
         ka = numerator/denominator
         return ka
 
-    def qh(self):
+    def hg1(self):
         ka = self.coefficient_ka()
-        qh = ka * self.q/math.cos(self.betta_q)*math.cos(self.betta_q)
-        return qh
+        B = self.B_final()
+        hg1 = self.gamma_k_1 * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2) ** 2 * ka * math.cos(self.betta_q) / 2
+        return hg1
+
+    def hg2(self):
+        ka = self.coefficient_ka()
+        B = self.B_final()
+        hg2 = self.gamma_k_1 * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2) * ka * math.cos(self.betta_q) * self.hw1
+        return hg2
+
+    def hg3(self):
+        ka = self.coefficient_ka()
+        hg3 =  self.gamma_prime * self.hw1 ** 2 * ka * math.cos(self.betta_q) / 2
+        return hg3
+
+    def hq(self):
+        B = self.B_final()
+        ka = self.coefficient_ka()
+        hq = self.q * ka * math.cos(self.betta_q) * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2 + self.hw1)
+        return hq
+
+    def hw(self):
+        hw = self.hw1 ** 2 * 9.807 / 2
+        return hw
+
+    # Horizontal and vertical distances of hgi and hq
+    def vd_hg1(self):
+        B = self.B_final()
+        hd_hg1 = self.hw1 + 1 / 3 * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2)
+        return hd_hg1
+
+    def hd_hg1(self):
+        B = self.B_final()
+        vd_hg1 = B/2
+        return vd_hg1
+
+    def vd_hg2(self):
+        hr_hg2 = self.hw1 / 2
+        return hr_hg2
+
+    def hd_hg2(self):
+        B = self.B_final()
+        vd_hg2 = B/2
+        return vd_hg2
+
+    def vd_hg3(self):
+        vd_vg3 = self.hw1 / 3
+        return vd_vg3
+
+    def hd_hg3(self):
+        B = self.B_final()
+        vd_hg1 = B/2
+        return vd_hg1
+
+    def vd_hw(self):
+        vd_hw = self.hw1 / 3
+        return vd_hw
+
+    def vd_hq(self):
+        B = self.B_final()
+        vd_hq = (((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2 + self.hw1)/2)
+        return vd_hq
+
+    def hd_hq(self):
+        B = self.B_final()
+        hd_hq = B/2
+        return hd_hq
+
+    def sum_of_vertical_forces_g(self):
+        hg1 = self.hg1()
+        hg2 = self.hg2()
+        hg3 = self.hg3()
+        gc1 = self.gc1()
+        gc2 = self.gc2()
+        gc3 = self.gc3()
+        gs1 = self.gs1()
+        gs2 = self.gs2()
+        gs3 = self.gs3()
+        gs4 = self.gs4()
+        gs5 = self.gs5()
+        gs6 = self.gs6()
+        w2 = self.w2()
+        vg = (hg1 + hg2 + hg3) * math.sin(self.betta_q) + gc1 + gc2 + gc3 + gs1 + gs2 + gs3 + gs4 + gs5 + gs6 - w2
+        return vg
+
+    def sum_of_vertical_forces_q(self):
+        hq = self.hq()
+        vq_sum = hq * math.sin(self.betta_q)
+        return vq_sum
+
+    def sum_of_horizontal_forces_g(self):
+        hg1 = self.hg1()
+        hg2 = self.hg2()
+        hg3 = self.hg3()
+        hw = self.hw()
+        hg_sum = (hg1 + hg2 + hg3) * math.cos(self.betta_q) + hw
+        return hg_sum
+
 
 obj = RetainingWall2()
 
