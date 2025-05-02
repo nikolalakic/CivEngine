@@ -2,22 +2,22 @@ import math
 
 class RetainingWall1: # Rankin theory
     def __init__(self):
-        self.ts = 0.7 # [m]
-        self.tb = 0.7 # [m]
-        self.h = 6 # [m]
-        self.bt = 0.6 # [m]
-        self.B = 4.5 # [m]
-        self.gamma_k_1 = 19 # [kN/m^3]
+        self.ts = 0.6 # [m]
+        self.tb = 0.6 # [m]
+        self.h = 6.5 # [m]
+        self.bt = 0.5 # [m]
+        self.B = 5.5 # [m]
+        self.gamma_k_1 = 18 # [kN/m^3]
         #self.ck1 = 0
-        self.phi_k_1 = 35 # [degrees]
-        self.gamma_k_2 = 18  # [kN/m^3]
+        self.phi_k_1 = 32 # [degrees]
+        self.gamma_k_2 = 19  # [kN/m^3]
         #self.ck2 = 5
         self.phi_k_2 = 26  # [degrees]
         self.Df = 1.2 # [m]
-        self.gamma_concrete = 25 # [kN/m^3]
+        self.gamma_concrete = 24 # [kN/m^3]
         self.q = 10 # [kN/m]
         self.H = self.tb + self.h
-        self.sigma_rd = 278.5 # [kN/m^2]
+        self.sigma_rd = 250 # [kN/m^2]
         self.gamma_g = 1.35
         self.gamma_q = 1.5
         self.gamma_g_fav = 1
@@ -29,9 +29,17 @@ class RetainingWall1: # Rankin theory
 
     def bh(self):
         phi_prime_d_1 = self._phi_prime(self.phi_k_1)
+        bh_geometrical = self.B - self.ts - self.ts
         # Wide heel check
         bh = self.h * math.tan(math.radians(45) - phi_prime_d_1/2)
-        bh = math.ceil(bh * 10)/10
+        if bh < 0:
+            # print(f'\nCalculated bh={round(bh, 2)} <=0 [m] >> bh={round(bh_geometrical,2)} [m] [accepted]\n\n')
+            bh = bh_geometrical
+        elif math.ceil(bh * 10) / 10 > 0 and bh < bh_geometrical:
+            # print(f'\nCalculated bh={bh} >=0 [m] and bh<={round(bh_geometrical,2)} [m] >> bh = {round(bh_geometrical,2)} [m] [accepted]\n\n')
+            bh = bh_geometrical
+        else:
+            bh = math.ceil(bh * 10) / 10
         return bh
 
 
