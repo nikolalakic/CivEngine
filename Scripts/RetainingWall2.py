@@ -94,7 +94,7 @@ class RetainingWall2: # Wide heel
 
     def w2(self): # Buoyancy
         B = self.B_final()
-        w2 = (self.hw1 * 9.807) * B
+        w2 = (self.hw1 * 9.807) * B / 2
         return w2
 
     def vq(self):
@@ -159,12 +159,12 @@ class RetainingWall2: # Wide heel
 
     def hd_hg1(self):
         B = self.B_final()
-        vd_hg1 = B/2
-        return vd_hg1
+        hd_hg1 = B/2
+        return hd_hg1
 
     def vd_hg2(self):
-        hr_hg2 = self.hw1 / 2
-        return hr_hg2
+        vd_hg2 = self.hw1 / 2
+        return vd_hg2
 
     def hd_hg2(self):
         B = self.B_final()
@@ -195,20 +195,13 @@ class RetainingWall2: # Wide heel
         return hd_hq
 
     def sum_of_vertical_forces_g(self):
-        hg1 = self.hg1()
-        hg2 = self.hg2()
-        hg3 = self.hg3()
-        gc1 = self.gc1()
-        gc2 = self.gc2()
-        gc3 = self.gc3()
-        gs1 = self.gs1()
-        gs2 = self.gs2()
-        gs3 = self.gs3()
-        gs4 = self.gs4()
-        gs5 = self.gs5()
-        gs6 = self.gs6()
+        def sum_methods(prefix, count):
+            return sum(getattr(self, f"{prefix}{i}")() for i in range(1, count + 1))
+        hg_sum = sum_methods("hg", 3)
+        gc_sum = sum_methods("gc", 3)
+        gs_sum = sum_methods("gs", 6)
         w2 = self.w2()
-        vg = (hg1 + hg2 + hg3) * math.sin(self.betta_q) + gc1 + gc2 + gc3 + gs1 + gs2 + gs3 + gs4 + gs5 + gs6 - w2
+        vg = hg_sum * math.sin(self.betta_q) + gc_sum + gs_sum - w2
         return vg
 
     def sum_of_vertical_forces_q(self):
@@ -217,15 +210,39 @@ class RetainingWall2: # Wide heel
         return vq_sum
 
     def sum_of_horizontal_forces_g(self):
-        hg1 = self.hg1()
-        hg2 = self.hg2()
-        hg3 = self.hg3()
+        def sum_methods(prefix, count):
+            return sum(getattr(self, f"{prefix}{i}")() for i in range(1, count + 1))
+        hg = sum_methods("hg", 3)
         hw = self.hw()
-        hg_sum = (hg1 + hg2 + hg3) * math.cos(self.betta_q) + hw
+        hg_sum = hg * math.cos(self.betta_q) + hw
         return hg_sum
 
+    def sum_of_horizontal_forces_q(self):
+        hq = self.hq()
+        hq_sum = hq * math.cos(self.betta_q)
+        return hq_sum
+
+    def moment_g_around_t(self):
+        B = self.B_final()
+        bh = self.bh_rankine()
+        mg = (self.gc1() * (B / 2 - self.bt - self.ts / 2) +
+              self.gc2() * (B / 2 - self.bt - self.ts - 1 / 3 * (self.b - self.ts)) +
+              self.gc3() * (B /2 - B / 2) +
+              self.gs1() * (B / 2 - self.bt / 2) +
+              self.gs2() * (B / 2 - self.bt - self.ts - 2 / 3 * (math.tan(self.alpha_c) * self.hw2)) -
+              self.gs3() * (self.bt + self.ts + (math.tan(self.alpha_c) * self.hw2))/2 -
+              self.gs4() * (B / 2 - 1 / 3 * (B - self.bt - self.ts)) +
+              self.gs5() * (B / 2 - (self.bt + self.ts + (math.tan(self.alpha_c) * self.hw2) + 2 / 3 * (self.b - self.ts - (math.tan(self.alpha_c) * self.hw2)))) -
+              self.gs6() * (B / 2 - bh / 2) +
+              (self.hg1() * math.cos(self.betta_q) * self.vd_hg1() - self.hg1() * math.sin(self.betta_q) * self.hd_hg1()) +
+              (self.hg2() * math.cos(self.betta_q) * self.vd_hg2() - self.hg2() * math.sin(self.betta_q) * self.hd_hg2()) +
+              (self.hg3() * math.cos(self.betta_q) * self.vd_hg3() - self.hg3() * math.sin(self.betta_q) * self.hd_hg3()) +
+              self.hw() * self.hw1 / 3 +
+              self.w2() * (B / 2 - B / 3)
+              )
+
+        return mg
 
 obj = RetainingWall2()
-
 
 
