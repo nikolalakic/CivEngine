@@ -2,19 +2,19 @@ import math
 
 class RetainingWall1: # Rankin theory
     def __init__(self):
-        self.ts = 0.6 # [m]
-        self.tb = 0.6 # [m]
-        self.h = 6.5 # [m]
-        self.bt = 0.5 # [m]
-        self.B = 5.5 # [m]
-        self.gamma_k_1 = 18 # [kN/m^3]
+        self.ts = 0.7 # [m]
+        self.tb = 0.7 # [m]
+        self.h = 6 # [m]
+        self.bt = 0.6 # [m]
+        self.B = 4.5 # [m]
+        self.gamma_k_1 = 19 # [kN/m^3]
         #self.ck1 = 0
-        self.phi_k_1 = 32 # [degrees]
-        self.gamma_k_2 = 19  # [kN/m^3]
+        self.phi_k_1 = 35 # [degrees]
+        self.gamma_k_2 = 18  # [kN/m^3]
         #self.ck2 = 5
         self.phi_k_2 = 26  # [degrees]
         self.Df = 1.2 # [m]
-        self.gamma_concrete = 24 # [kN/m^3]
+        self.gamma_concrete = 25 # [kN/m^3]
         self.q = 10 # [kN/m]
         self.H = self.tb + self.h
         self.sigma_rd = 250 # [kN/m^2]
@@ -201,7 +201,7 @@ class RetainingWall1: # Rankin theory
         return a
 
     def sliding_stability_check(self):
-        phi_prime_d2 = self._phi_prime(self.phi_k_2)
+        phi_prime_d2 = self._phi_prime(self.phi_k_2, stability=False)
         gamma_rh = 1.1
         vg = self.vg()
         vq = self.vq()
