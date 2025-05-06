@@ -32,7 +32,8 @@ class RetainingWall2: # Wide heel
         betta_q = 0 # degrees
         self.betta_q = math.radians(betta_q) # [radians]
         self.H = self.tb + self.h
-        self.sigma_rd = 250  # [kN/m^2]
+        self.sigma_rd = 262  # [kN/m^2]
+        # Coefficients of safety
         self.gamma_g = 1.35
         self.gamma_q = 1.5
         self.gamma_g_fav = 1
@@ -75,12 +76,15 @@ class RetainingWall2: # Wide heel
         else:
             return b_final
 
+    def total_H(self):
+        Hu = (self.B_final() - self.bt - self.ts) * math.tan(self.betta_q) + self.H
+        return Hu
+
     def gs1(self): # Soil weight 1
         # This value can be disregarded
-        # gs1 = 0
+        #gs1 = 0
         t = self.Df - self.tb
         gs1 = self.bt * t * self.gamma_k_2
-
         return gs1
 
     def gs2(self): # Soil weight 2
@@ -143,7 +147,7 @@ class RetainingWall2: # Wide heel
         return ka
 
     def hg1(self, phi, stability=False):
-        ka = self.coefficient_ka(phi,stability)
+        ka = self.coefficient_ka(phi, stability)
         B = self.B_final()
         hg1 = self.gamma_k_1 * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2) ** 2 * ka * math.cos(self.betta_q) / 2
         return hg1
@@ -312,13 +316,15 @@ class RetainingWall2: # Wide heel
                      ) + self.gamma_q_dstb * (self.hq(phi=self.phi_k_2, stability=True) * math.cos(self.betta_q) * (self.H + (math.tan(self.betta_q) * (bh + self.b - self.ts))) / 2)
                     )
         if med_dstb/med_stb <= 1:
-            a = ("Overturning stability check....OK!\n "
+            print("Overturning stability check....OK!\n "
                   f"med_dstb/med_stb = {round(med_dstb/med_stb, 2)} <= 1"
                   "\n")
+            a = True
         else:
-            a = ("Overturning stability check....FAIL!\n "
+            print("Overturning stability check....FAIL!\n "
                   f"med_dstb/med_stb = {round(med_dstb/med_stb, 2)} > 1"
                   " \n")
+            a = False
         return a
 
     def maximum_gross_soil_stress_check(self): # ULS STR
@@ -333,12 +339,14 @@ class RetainingWall2: # Wide heel
         m = self.gamma_g * mg + self.gamma_q * mq
         sigma_max = v/f + m/w
         if sigma_max > self.sigma_rd:
-            a = ("Maximum gross soil stress exceeded....FAIL!\n "
+            print("Maximum gross soil stress exceeded....FAIL!\n "
                   f"qed_max = {round(sigma_max,1)} [kN/m] <= sigma_Rd = {round(self.sigma_rd, 1)} [kN/m]\n")
+            a = False
         else:
-            a = (f"Maximum gross soil stress....OK!\n "
+            print(f"Maximum gross soil stress....OK!\n "
                  f"qed_max = {round(sigma_max,1)} [kN/m]"
                  f" <= sigma_Rd = {round(self.sigma_rd, 1)} [kN/m]\n")
+            a = True
         return a
 
     def minimum_gross_soil_stress_check(self): # ULS STR
@@ -353,13 +361,15 @@ class RetainingWall2: # Wide heel
         m = self.gamma_g * mg + self.gamma_q * mq
         sigma_min = v/f - m/w
         if sigma_min < 0 or sigma_min >= self.sigma_rd:
-            a = ("Tension in foundation line or maximum soil stress exceeded....FAIL!\n "
+            print("Tension in foundation line or maximum soil stress exceeded....FAIL!\n "
                   f"qed_min = {round(sigma_min,1)} [kN/m] >= sigma_Rd = {round(self.sigma_rd, 1)} [kN/m]\n")
+            a = False
         else:
-            a = ("Minimum gross soil check....OK!\n "
+            print("Minimum gross soil check....OK!\n "
                  f"qed_min = {round(sigma_min,1)} [kN/m]"
                  " >= 0\n"
                  f" qed_min = {round(sigma_min,1)} [kN/m] <= sigma_Rd = {round(self.sigma_rd, 1)} [kN/m]\n")
+            a = True
         return a
 
     def sliding_check(self):
@@ -371,22 +381,88 @@ class RetainingWall2: # Wide heel
               self.hg3(phi=self.phi_k_1) * math.cos(self.betta_q)) + self.gamma_g * self.hw() +
               self.gamma_q * self.hq(phi=self.phi_k_1) * math.cos(self.betta_q))
         if hd/hrd > 1:
-            a = ("Sliding stability check....FAIL!\n "
+            print("Sliding stability check....FAIL!\n "
                  f"hd/h_rd = {round(hd / hrd, 2)} > 1")
+            a = False
         else:
-            a = ("Sliding stability check....OK!\n "
+            print("Sliding stability check....OK!\n "
                  f"hd/h_rd = {round(hd / hrd, 2)} <= 1")
+            a = True
         return a
 
+    def dimensioning_of_wall(self):
+        B = self.B_final()
+        ka1 = self.coefficient_ka(phi=self.phi_k_1)
+        hg1 = self.gamma_k_1 * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2 - self.tb) ** 2 * ka1 * math.cos(
+            self.betta_q) / 2
+        if self.hw1 == 0:
+            hg2 = 0
+            hg3 = 0
+            param_hg2 = 0
+            param_hg3 = 0
+            hw = 0
+            param_hw = 0
+        else:
+            hg2 = self.hg2(phi=self.phi_k_1) * (1 - self.tb/self.hw1)
+            hg3 =  self.gamma_prime * (self.hw1 - self.tb) ** 2 * ka1 * math.cos(self.betta_q) / 2
+            hw = (self.hw1 - self.tb) ** 2 * 9.807 / 2
+            param_hg2 = (self.hw1 - self.tb) / 2
+            param_hg3 = (self.hw1 - self.tb) / 3
+            param_hw = (self.hw1 - self.tb) / 3
+        if self.b == 0:
+            param_hr = self.ts
+        else:
+            param_hr = self.b
+        mg = (1 * (math.cos(self.betta_q)) * (hg1 * (self.hw1 + (self.hw2 - self.tb) / 3) +
+                                                               hg2 * math.cos(self.betta_q) * param_hg2 +
+                                                               hg3 * math.cos(self.betta_q) * param_hg3 +
+                                                               hw * param_hw) -
+                    math.sin(self.betta_q) * (B - self.bt - param_hr / 2) * ((self.hg1(phi=self.phi_k_1)) +
+                                                               self.hg2(phi=self.phi_k_1) +
+                                                               self.hg3(phi=self.phi_k_1))
+             )
+
+        mq = self.hq(phi=self.phi_k_1) * (1 - (self.tb/self.total_H())) * (self.total_H() - self.tb) / 2
+
+        med = self.gamma_g * mg + self.gamma_q * mq
+        as1 = med / (0.9 * (self.ts - 0.05) * 434800)
+        a = f"\n-----------\nDimensioning of wall:\nAs1,req,wall = {round(as1 * math.pow(10, 4), 2)} [cm^2]"
+        return a
+
+    def dimensioning_of_heel(self):
+        # TODO zavrsi dimenzionisanje pete temelja
+        if self.b == 0:
+            param = self.ts
+        else:
+            param = self.b
+        B = self.B_final()
+        bh = self.bh_rankine()
+        f = B * 1
+        vg = self.sum_of_vertical_forces_g()
+        vq = self.sum_of_vertical_forces_q()
+        mg = self.moment_g_around_t()
+        mq = self.moment_q_around_t()
+        w = 1 / 6 * B ** 2 * 1
+        v = self.gamma_g * vg + self.gamma_q * vq
+        m = self.gamma_g * mg + self.gamma_q * mq
+        sigma_max = v / f + m / w
+        sigma_min = v / f - m / w
+        sigma_bh = sigma_min + bh * (sigma_max - sigma_min) / B
+        w2 = self.w2()
+        m_down = (sigma_min * bh ** 2 / 2 + (sigma_bh - sigma_min) * bh ** 2 / 3 + self.gamma_g * ((2 * w2 - bh * 2 * w2 / B) * bh / 2 +
+                  (2 * w2 - (2 * w2 - bh * 2 * w2 / B)) * 2 / 3 * bh))
+        return m_down
     def overall_check(self):
+        print(f"-----\nTotal foundation width of retaining wall: B = {self.B_final()} [m] "
+              f"where: bh = {self.bh_rankine()} [m]")
         maximum_gross_stress = self.maximum_gross_soil_stress_check()
         minimum_gross_stress = self.minimum_gross_soil_stress_check()
         overturning_check = self.stability_check()
         sliding_check = self.sliding_check()
-        print(maximum_gross_stress)
-        print(minimum_gross_stress)
-        print(overturning_check)
-        print(sliding_check)
+        if all([maximum_gross_stress, minimum_gross_stress, overturning_check, sliding_check]):
+            print(self.dimensioning_of_wall())
+        else:
+            pass
 
 obj = RetainingWall2()
 obj.overall_check()
