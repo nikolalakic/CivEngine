@@ -1,0 +1,1 @@
+# TODO odradi skriptu za izvestaj u latex-u
