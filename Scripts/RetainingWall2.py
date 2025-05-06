@@ -82,9 +82,9 @@ class RetainingWall2: # Wide heel
 
     def gs1(self): # Soil weight 1
         # This value can be disregarded
-        #gs1 = 0
-        t = self.Df - self.tb
-        gs1 = self.bt * t * self.gamma_k_2
+        gs1 = 0
+        #t = self.Df - self.tb
+        #gs1 = self.bt * t * self.gamma_k_2
         return gs1
 
     def gs2(self): # Soil weight 2
@@ -290,8 +290,10 @@ class RetainingWall2: # Wide heel
         bh = self.bh_rankine()
         if self.b == 0:
             param = bh
+            param_q = bh / 2 + self.ts + self.bt
         else:
             param = bh + self.b - self.ts
+            param_q =  bh / 2 + self.b - self.ts + self.bt
         med_stb = (self.gamma_g_stb *
                    (self.gc1() * (self.ts / 2 + self.bt) +
                     self.gc2() * ((self.b - self.ts) / 3 + self.bt + self.ts) +
@@ -302,18 +304,18 @@ class RetainingWall2: # Wide heel
                     self.gs4() * (2 / 3 * (B - self.bt - self.ts) + self.ts + self.bt) +
                     self.gs5() * (self.bt + self.ts + (math.tan(self.alpha_c) * self.hw2) + 2 / 3 * ((self.hw1 - self.tb) * math.tan(self.alpha_c))) +
                     self.gs6() * (bh / 2 + self.b + self.bt) +
-                    self.hg1(phi=self.phi_k_2, stability=True) * math.sin(self.betta_q) * B +
-                    self.hg2(phi=self.phi_k_2, stability=True) * math.sin(self.betta_q) * B +
-                    self.hg3(phi=self.phi_k_2, stability=True) * math.sin(self.betta_q) * B +
-                    self.vq() * ((bh / 2 + self.ts + self.b + self.bt))  *  self.gamma_q_stb
-        ))
+                    self.hg1(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B +
+                    self.hg2(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B +
+                    self.hg3(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B +
+                   self.hq(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B) +
+                    self.vq() * param_q  *  self.gamma_q_stb)
         med_dstb = (self.gamma_g_dstb *
-                    (self.hg1(phi=self.phi_k_2, stability=True) * math.cos(self.betta_q) * (self.hw1 + math.tan(self.betta_q) * param + self.hw2/3) +
-                     self.hg2(phi=self.phi_k_2, stability=True) * math.cos(self.betta_q) * self.hw1 / 2 +
-                     self.hg3(phi=self.phi_k_2, stability=True) * math.cos(self.betta_q) * self.hw1 / 3 +
+                    (self.hg1(phi=self.phi_k_1, stability=True) * math.cos(self.betta_q) * (self.hw1 + math.tan(self.betta_q) * param + self.hw2/3) +
+                     self.hg2(phi=self.phi_k_1, stability=True) * math.cos(self.betta_q) * self.hw1 / 2 +
+                     self.hg3(phi=self.phi_k_1, stability=True) * math.cos(self.betta_q) * self.hw1 / 3 +
                      self.w2() * 2 / 3 * B +
                      self.hw() * self.hw1 / 3
-                     ) + self.gamma_q_dstb * (self.hq(phi=self.phi_k_2, stability=True) * math.cos(self.betta_q) * (self.H + (math.tan(self.betta_q) * (bh + self.b - self.ts))) / 2)
+                     ) + self.gamma_q_dstb * (self.hq(phi=self.phi_k_1, stability=True) * math.cos(self.betta_q) * (self.H + (math.tan(self.betta_q) * (bh + self.b - self.ts))) / 2)
                     )
         if med_dstb/med_stb <= 1:
             print("Overturning stability check....OK!\n "
@@ -466,6 +468,7 @@ class RetainingWall2: # Wide heel
 
 obj = RetainingWall2()
 obj.overall_check()
+
 
 
 
