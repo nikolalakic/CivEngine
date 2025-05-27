@@ -161,3 +161,8 @@ cython_debug/
 test.py
 /Graphics/Graphics.bak
 /Graphics/Graphics.dwl
+/LatexTemplates/*.aux
+/LatexTemplates/*.log
+/LatexTemplates/*.out
+/LatexTemplates/*.pdf
+/LatexTemplates/*.synctex.gz
