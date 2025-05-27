@@ -466,8 +466,12 @@ class RetainingWall2: # Wide heel
         else:
             pass
 
-obj = RetainingWall2()
-obj.overall_check()
+def main():
+    obj = RetainingWall2()
+    obj.overall_check()
+
+#if __name__ == '__main__':
+#   main()
 
 
 
