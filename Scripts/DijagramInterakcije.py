@@ -219,8 +219,8 @@ class DijagramInterakcije:
         height_px = 800
         figsize = (width_px / dpi, height_px / dpi)
         plt.figure(figsize=figsize)
-        plt.xlabel('\u03BDRd')
-        plt.ylabel('\u03BCRd')
+        plt.xlabel('\u03BDEd')
+        plt.ylabel('\u03BCEd')
         plt.title('Dijagram interakcije')
 
         # Osnovne linije
@@ -239,11 +239,15 @@ class DijagramInterakcije:
         plt.plot(tri_i_po_sa_cetrdeset[0], tri_i_po_sa_cetrdeset[1], color='magenta',
                  label='Ec2/Es1 = 3.5\u2030/ -40\u2030')
         plt.plot([], [],
-                 label=f'As1 = {self.k} * As', linestyle='-', color='black', linewidth=2, marker='>', markersize=10)
+                 label=f'As1 = {self.k} * As = {self.k} * \u03C9 * b * h * fcd / fyd', linestyle='-', color='black', linewidth=2, marker='>', markersize=10)
         plt.plot([], [],
-                 label=f'As2 = {1 - self.k} * As', linestyle='-', color='black', linewidth=2, marker='>', markersize=10)
+                 label=f'As2 = {1 - self.k} * As = = {1 - self.k} * \u03C9 * b * h * fcd / fyd', linestyle='-', color='black', linewidth=2, marker='>', markersize=10)
         plt.plot([], [],
                  label=f'fck = {self.fck} MPa', linestyle='-', color='black', linewidth=2, marker='*', markersize=10)
+        plt.plot([], [],
+                 label=f'\u03BC_Ed = {round(self.mi_Ed, 2)} ', linestyle='-', color='black', linewidth=2, marker='*', markersize=10)
+        plt.plot([], [],
+                 label=f'\u03BD_Ed = {round(self.ni_Ed, 2)} ', linestyle='-', color='black', linewidth=2, marker='*', markersize=10)
 
         niz_x = np.array([centricni_pritisak[0],
                           granica_malog_ekscentriciteta[0],
