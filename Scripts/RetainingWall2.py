@@ -3,19 +3,19 @@ import math
 class RetainingWall2: # Wide heel
     def __init__(self):
         self.hw1 = 0 # [m]
-        self.ts = 0.7 # [m]
-        self.tb = 0.7 # [m]
-        self.B = 4.5 # [m] appr. (0.5-0.7)*H
+        self.ts = 0.5 # [m]
+        self.tb = 0.6 # [m]
+        self.B = 5 # [m] appr. (0.5-0.7)*H
         self.b = 0 # [m]
-        self.bt = 0.6 # [m]
-        self.h = 6.0  # [m]
+        self.bt = 0.5 # [m]
+        self.h = 6 # [m]
         self.H = self.h + self.tb # [m]
         self.gamma_k_1 = 19 # [kN/m^3]
         self.gamma_k_2 = 18  # [kN/m^3]
-        self.gamma_k_1_w = 22 # [kN/m^3]
-        self.gamma_prime = self.gamma_k_1_w - 9.807 # [kN/m^3]
+        self.gamma_k1w = 20 # [kN/m^3]
+        self.gamma_prime = self.gamma_k1w - 9.807 # [kN/m^3]
         if self.hw1 == 0:
-            self.gamma_k_1_w = self.gamma_k_1
+            self.gamma_k1w = self.gamma_k_1
             self.gamma_prime = self.gamma_k_1
             self.hw2 = self.H
         else:
@@ -51,13 +51,14 @@ class RetainingWall2: # Wide heel
 
     def bh_rankine(self):
         phi_prime_d_1 = self._phi_prime(self.phi_k_1)
-        tg_gamma = math.tan(math.pi/4 + phi_prime_d_1)
+        tg_gamma = math.tan(math.pi/4 - phi_prime_d_1/2)
         if self.b > 0:
             bh_geometrical = self.B - self.b - self.bt
         else:
             bh_geometrical = self.B - self.bt - self.ts
         # Wide heel check
-        bh = self.h/tg_gamma- self.b + self.ts
+        #bh = self.h/tg_gamma- self.b + self.ts
+        bh = (self.H - self.tb) * tg_gamma
         if bh < 0:
             #print(f'\nCalculated bh={round(bh, 2)} <=0 [m] >> bh={round(bh_geometrical,2)} [m] [accepted]\n\n')
             bh = bh_geometrical
@@ -67,6 +68,12 @@ class RetainingWall2: # Wide heel
         else:
             bh = math.ceil(bh * 10) / 10
         return bh
+
+    def bh_calculated(self):
+        phi_prime_d_1 = self._phi_prime(self.phi_k_1)
+        tg_gamma = math.tan(math.pi / 4 - phi_prime_d_1/2)
+        bh = (self.H - self.tb) * tg_gamma
+        return round(bh,2)
 
     def B_final(self):
         bh = self.bh_rankine()
@@ -99,22 +106,35 @@ class RetainingWall2: # Wide heel
             gs3 = (B - self.bt - self.ts - math.tan(self.alpha_c) * (self.hw2 - self.tb)) * (self.hw2 - self.tb) * self.gamma_k_1
         return gs3
 
+    def gs3_hw1_eq_zero(self):
+        B = self.B_final()
+        gs3 = (B - self.bt - self.ts - math.tan(self.alpha_c) * (self.hw2 - self.tb)) * (
+                    self.hw2 - self.tb) * self.gamma_k_1
+        return gs3
+
+
     def gs4(self): # Soil weight 4
         bh = self.bh_rankine()
         gs4 = math.tan(self.betta_q) * (bh + self.b - self.ts) ** 2 / 2 * self.gamma_k_1
         return gs4
 
     def gs5(self): # Soil weight 5
-        gs5 = math.tan(self.alpha_c) * (self.hw1 - self.tb) ** 2 /2 * self.gamma_k_1_w
+        gs5 = math.tan(self.alpha_c) * (self.hw1 - self.tb) ** 2 /2 * self.gamma_k1w
         return gs5
 
     def gs6(self): # Soil weight 6
         bh = self.bh_rankine()
         if self.hw1 != 0:
-            gs6 = bh * (self.H - self.tb - self.hw2) * self.gamma_k_1_w
+            gs6 = bh * (self.H - self.tb - self.hw2) * self.gamma_k1w
         else:
-            gs6 = bh * (self.H - self.tb - (self.hw2 - self.tb)) * self.gamma_k_1_w
+            gs6 = bh * (self.H - self.tb - (self.hw2 - self.tb)) * self.gamma_k1w
         return gs6
+
+    def gs6_hw1_eq_zero(self):
+        bh = self.bh_rankine()
+        gs6 = bh * (self.H - self.tb - (self.hw2 - self.tb)) * self.gamma_k1w
+        return gs6
+
 
     def w2(self): # Buoyancy
         B = self.B_final()
@@ -470,8 +490,8 @@ def main():
     obj = RetainingWall2()
     obj.overall_check()
 
-#if __name__ == '__main__':
-#   main()
+if __name__ == '__main__':
+   main()
 
 
 
