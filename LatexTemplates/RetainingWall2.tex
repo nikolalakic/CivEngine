@@ -1,10 +1,10 @@
-\documentclass[a4paper, 12pt]{article}
+\documentclass[a4paper, 11pt]{article}
 %\documentclass{letter}
 \usepackage{cmsrb}
 \usepackage[T2A,OT2]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[colorlinks]{hyperref}
-\usepackage[left=1cm,top=5cm,right=1cm, bottom=1cm]{geometry} % Document margins
+\usepackage[left=2.5cm,top=0.5cm,right=1cm, bottom=1.25cm]{geometry} % Document margins
 \usepackage{graphicx}
 \usepackage{tabularx}
 \usepackage{multirow}
@@ -16,14 +16,237 @@
     urlcolor=blue
 }
 
+\renewcommand{\figurename}{Slika}
+\renewcommand{\tablename}{Tabela}
+
 \begin{document}
 
-Ulazni podaci potpornog zida:
+\section*{Ulazni parametri potpornog zida} 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth, height=15cm]{../Graphics/RetainingWall1_geometry.png}
+    \caption{Geometrijiske i mehani\v{c}ke karakteristike potpornog zida}
+    \label{geometrija_zida}
+\end{figure}
+
+\newpage
+
+\begin{center}
+Tabelarni prikaz ulaznih parametara potpornog zida:
+\end{center}
+
+\begin{table}[h]
+\centering
+\begin{minipage}{0.40\textwidth}
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+Parametar & Vrednost & Jedinica mere \\
+\hline
+$B$ & $B_final$ & $m$ \\
+\hline
+$h_{w1}$ & $hw1$ & $m$ \\
+\hline
+$h_{w2}$ & $hw2$ & $m$ \\
+\hline
+$t_{s}$ & $t_s$ & $m$ \\
+\hline
+$b_{t}$ & $b_t$ & $m$ \\
+\hline
+$t_{b}$ & $t_b$ & $m$ \\
+\hline
+$H$ & $h_u$ & $m$ \\
+\hline
+$D_{f}$ & $Df$ & $m$ \\
+\hline
+$b_{h}$ & $b_h$ & $m$ \\
+\hline
+$b$ & $b_o$ & $m$ \\
+\hline
+$\beta_{q}$ & $betta_q$ & $\circ$\\
+\hline
+$\alpha_{c}$ & $alpha_c$ & $\circ$\\
+\hline
+\end{tabular}
+\caption{Geometrijiski parametri potpornog zida}
+\label{tab:geometrijiski_parametri}
+\end{minipage}
+\hfill
+\begin{minipage}{0.40\textwidth}
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+Parametar & Vrednost & Jedinica mere \\
+\hline
+$\gamma_{k,1}$ & $gamma_k_1$ & $kN/m^3$ \\
+\hline
+$\gamma_{k,2}$ & $gamma_k_2$ & $kN/m^3$ \\
+\hline
+$\gamma_{k,1,w}$ & $gamma_k1w$ & $kN/m^3$ \\
+\hline
+$\gamma^{'}$ & $gamma_prime$ & $kN/m^3$ \\
+\hline
+$\phi_{1}$ & $phi_k_1$ & $\circ$ \\
+\hline
+$\phi_{2}$ & $phi_k_2$ & $\circ$ \\
+\hline
+$\sigma_{Rd}$ & $sigma_rd$ & $kPa$ \\
+\hline
+$\gamma_{c}$ & 25 & $kN/m^3$ \\
+\hline
+\end{tabular}
+\caption{Mehani\v{c}ki parametri tla u sklopu potpornog zida}
+\label{tab:mehanicki_parametri}
+\end{minipage}
+\end{table}
+
+%\begin{center}
+%Tabelarni prikaz optere\'cenja i koeficijenata sigurnosti:
+%\end{center}
+
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+Parametar & Vrednost & Jedinica mere \\
+\hline
+$q$ & $ q_u $ & $kN/m^2$ \\
+\hline
+$\gamma_{g}$ & $ gammag $ & - \\
+\hline
+$\gamma_{q}$ & $ gammaq $ & - \\
+\hline
+$\gamma_{g, fav}$ & $ gamma_gfav $ & - \\
+\hline
+$\gamma_{g, stab}$ & $ gamma_gstb $ & - \\
+\hline
+$\gamma_{g, dstb}$ & $ gamma_gdstb $ & - \\
+\hline
+$\gamma_{q, stb}$ & $ gamma_qstb $ & - \\
+\hline
+$\gamma_{q, dstb}$ & $ gamma_qdstb $ & - \\
+\hline
+$\gamma_{r,h}$ & $ gamma_rh $ & - \\
+\hline
+\end{tabular}
+\caption{Optere\'cenje $q$ i koeficijenti sigurnosti}
+\label{tab:koeficijenti_sigurnosti}
+\end{table}
+
+\newpage
+
+\section*{Stati\v{c}ki prora\v{c}un potpornog zida}
+
+\subsection*{Pretpostavka o Rankinovoj teoriji ravnih preseka:}
+
+\noindent Uslov \v{s}iroke pete:
 
 \begin{align*}
-B = B_final \text{ } [m]\\
-h_{w1} = hw1 \text{ } [m] \\
-h_{w2} = hw2 \text{ } [m]
+b_{h} &\geq (H - t_{b}) \cdot \tan\left(45 - \frac{\phi'_{1,d}}{2}\right)\\
+\phi'_{1,d} &= \arctan\left(\frac{\tan(\phi_{1})}{\gamma'_{\phi}}\right) = phi_k_1^\circ \quad \text{gde je } \gamma'_{\phi} = 1\\
+b_{h} &\geq (h_u - t_b) \cdot \tan\left(45 - \frac{phi_k_1}{2}\right) = bh_calculated \text{ } [m]
 \end{align*}
+Usvojena \v{s}irina pete:
+\begin{align*}
+b_{h} = b_h \text{ } [m]
+\end{align*}
+Ukupna \v{s}irina temeljne spojnice:
+\begin{align*}
+B = b_{t} + t_{s} + b_{h} = b_t + t_s + b_h = B_final \text{ } [m]
+\end{align*}
+
+\subsection*{Prora\v{c}un uticaja koji deluju na potporni zid:}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth, height=15cm]{../Graphics/RetainingWall1_gravity.png}
+    \caption{Vertikalni uticaji na potporni zid}
+    \label{uticaji_zida}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth, height=15cm]{../Graphics/RetainingWall1_forces.png}
+    \caption{Horizontalni (kosi) uticaji na potporni zid}
+    \label{uticaji_zida}
+\end{figure}
+
+\newpage
+
+Te\v{z}ina tla $G_{s1}$:
+
+\begin{align*}
+G_{s1} = b_{t} \cdot (D_{f} - t_{b}) \cdot \gamma_{k2} = b_t \cdot (Df - t_b) \cdot gamma_k_2 = gs1 \text{ } [kN/m]
+\end{align*}
+
+Te\v{z}ina tla $G_{s2}$:
+
+\begin{align*}
+G_{s2} = \tan (\alpha_{c}) \cdot \frac{h_{w2}^2}{2} \cdot \gamma_{k,1} = \tan (alpha_c) \cdot \frac{hw2^2}{2} \cdot gamma_k_1 = gs2 \text{ } [kN/m]
+\end{align*}
+
+%Te\v{z}ina tla $G_{s3}$ (za $h_{w1} \neq 0$):
+
+%\begin{align*}
+%G_{s3} &= (B - b_{t} - t_{s} - \tan{(\alpha_{c})} \cdot h_{w2}) \cdot h_{w2} \cdot \gamma_{k,1} \\
+%       &= (B_final - b_t - t_s - \tan{alpha_c} \cdot hw2) \cdot hw2 \cdot gamma_k_1 = gs3 \text{ } [kN/m]
+%\end{align*}
+
+Te\v{z}ina tla $G_{s3}$ (za $h_{w1} = 0$):
+
+\begin{align*}
+G_{s3} &= (B - b_{t} - t_{s} - \tan{(\alpha_{c})} \cdot (h_{w2} - t_{b})) \cdot (h_{w2} - t_{b}) * \gamma_{k,1} \\
+	   &= gs_three_eq_zero \text{ } [kN/m]
+\end{align*}
+
+Te\v{z}ina tla $G_{s4}$:
+
+\begin{align*}
+G_{s4} &= \tan{\alpha_{c}} \cdot \frac{(b_{h} + b - t_{s})^2}{2} \cdot \gamma_{k,1} \\
+	   &= \tan{alpha_c} \cdot \frac{(b_h + b_o - t_s)^2}{2} \cdot gamma_k_1 = gs4 \text{ } [kN/m]
+\end{align*}
+
+Te\v{z}ina tla $G_{s5}$:
+
+\begin{align*}
+G_{s5} &= \tan{(\alpha_{c})} \cdot \frac{(h_{w1} - t_{b})^2}{2} \cdot \gamma_{k,1,w} \\
+       &= \tan{(alpha_c)} \cdot \frac{(hw1 - t_b)^2}{2} \cdot gamma_k1w = gs5 \text{ } [kN/m]
+\end{align*}
+
+%Te\v{z}ina tla $G_{s6}$ (za $h_{w1} \neq 0$):
+
+%\begin{align*}
+%G_{s6} &= b_{h} \cdot (H - t_{b} - h_{w2}) \cdot \gamma_{k,1,w} \\
+%       &= b_h \cdot (h_u - t_b - hw2) \cdot gamma_k1w = gs6 \text{ } [kN/m]
+%\end{align*}
+
+Te\v{z}ina tla $G_{s6}$ (za $h_{w1} = 0$):
+
+\begin{align*}
+G_{s6} &= b_{h} \cdot (H - t_{b} - (h_{w2}-t_{b}) \cdot \gamma_{k,1,w} \\
+       &= b_h \cdot (h_u - t_b - (hw2-t_b)) \cdot gamma_k1w = gs_six_eq_zero \text{ } [kN/m]
+\end{align*}
+
+Te\v{z}ina betonskog dela potpornog zida $G_{c1}$:
+
+\begin{align*}
+G_{c1} = gc1 \text{ } [kN/m]
+\end{align*}
+
+Te\v{z}ina betonskog dela potpornog zida $G_{c2}$:
+
+\begin{align*}
+G_{c2} = gc2 \text{ } [kN/m]
+\end{align*}
+
+Te\v{z}ina betonskog dela potpornog zida $G_{c3}$:
+
+\begin{align*}
+G_{c3} = gc3 \text{ } [kN/m]
+\end{align*}
+
+
 
 \end{document}
