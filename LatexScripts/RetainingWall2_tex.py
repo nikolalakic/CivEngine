@@ -1,3 +1,4 @@
+import math
 import os
 import shutil
 from Scripts.RetainingWall2 import RetainingWall2
@@ -5,6 +6,7 @@ from Scripts.RetainingWall2 import RetainingWall2
 class RetainingWall2Tex(RetainingWall2):
     def __init__(self):
         super().__init__()
+        self.phi_prime = self._phi_prime(self.phi_k_2)
         self.dict = {
             'hw1' : f'{self.hw1}',
             'hw2': f'{self.hw2}',
@@ -18,7 +20,7 @@ class RetainingWall2Tex(RetainingWall2):
             'gamma_k1w' : f'{self.gamma_k1w}',
             'phi_k_1' : f'{self.phi_k_1}',
             'phi_k_2' : f'{self.phi_k_2}',
-            'h_u' : f'{self.total_H()}',
+            'h_u' : f'{round(self.total_H(), 2)}',
             'Df' : f'{self.Df}',
             'b_h' : f'{self.bh_rankine()}',
             'b_o': f'{self.b}',
@@ -32,6 +34,7 @@ class RetainingWall2Tex(RetainingWall2):
             'gamma_qstb' : f'{self.gamma_q_stb}',
             'gamma_qdstb' : f'{self.gamma_q_dstb}',
             'gamma_rh' : f'{self.gamma_r_h}',
+            'gamma_concrete' : f'{self.gamma_concrete}',
             'bh_calculated' : f'{self.bh_calculated()}',
             'gs1': f'{round(self.gs1(),2)}',
             'gs2': f'{round(self.gs2(),2)}',
@@ -42,10 +45,25 @@ class RetainingWall2Tex(RetainingWall2):
             'gc1': f'{round(self.gc1(),2)}',
             'gc2': f'{round(self.gc2(),2)}',
             'gc3': f'{round(self.gc3(),2)}',
-            'alpha_c' : f'{self.alpha_c}',
-            'betta_q' : f'{self.betta_q}',
+            'alpha_c' : f'{round(self.alpha_c * 180/math.pi, 2)}',
+            'betta_q' : f'{round(self.betta_q * 180/math.pi, 2)}',
             'gs_three_eq_zero' : f'{round(self.gs3_hw1_eq_zero(),2)}',
-            'gs_six_eq_zero': f'{round(self.gs6_hw1_eq_zero(),2)}'
+            'gs_six_eq_zero': f'{round(self.gs6_hw1_eq_zero(),2)}',
+            'koeficijent_ka': f'{round(self.coefficient_ka(phi=self.phi_k_1), 3)}',
+            'phi_prime1d' : f'{round(self._phi_prime(phi=self.phi_k_1) * 180/math.pi, 3)}',
+            'v_q' : f'{round(self.vq(), 2)}',
+            'w_2' : f'{round(self.w2(), 2)}',
+            'h_g1' : f'{round(self.hg1(phi=self.phi_k_1), 2)}',
+            'h_g2' : f'{round(self.hg2(phi=self.phi_k_1), 2)}',
+            'h_g3': f'{round(self.hg3(phi=self.phi_k_1), 2)}',
+            'h_q' : f'{round(self.hq(phi=self.phi_k_1), 2)}',
+            'h_w' : f'{round(self.hw(), 2)}',
+            'hd_hg1' : f'{round(self.hd_hg1(), 3)}',
+            'vd_hg1' : f'{round(self.vd_hg1(), 3)}',
+            'vd_hg2' : f'{round(self.vd_hg2(), 3)}',
+            'vd_hg3' : f'{round(self.vd_hg3(), 3)}',
+            'vd_hw' : f'{round(self.vd_hw(), 3)}',
+            'vd_hq' : f'{round(self.vd_hq(), 3)}',
         }
 
     def tex_file_path(self):
@@ -68,7 +86,7 @@ class RetainingWall2Tex(RetainingWall2):
                 os.remove(i)
         path_pdf_latex = 'pdflatex.exe'
         os.system(f'{path_pdf_latex} obrada.tex')
-        final_pdf = os.rename("obrada.pdf", 'RetainingWall2_report.pdf')
+        os.rename("obrada.pdf", 'RetainingWall2_report.pdf')
         files_to_delete = ["obrada.tex", "obrada.aux", "obrada.log", "obrada.out", "obrada.synctex.gz"]
         try:
             for i in files_to_delete:
