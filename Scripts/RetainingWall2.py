@@ -2,17 +2,17 @@ import math
 
 class RetainingWall2: # Wide heel
     def __init__(self):
-        self.hw1 = 0 # [m]
-        self.ts = 0.5 # [m]
-        self.tb = 0.6 # [m]
-        self.B = 5 # [m] appr. (0.5-0.7)*H
-        self.b = 0 # [m]
-        self.bt = 0.5 # [m]
-        self.h = 6 # [m]
+        self.hw1 = 2 # [m]
+        self.ts = 0.3 # [m]
+        self.tb = 0.8 # [m]
+        self.B = 3.5 # [m] appr. (0.5-0.7)*H
+        self.b = 1.4 # [m]
+        self.bt = 0.4 # [m]
+        self.h = 3.2 # [m]
         self.H = self.h + self.tb # [m]
         self.gamma_k_1 = 19 # [kN/m^3]
         self.gamma_k_2 = 18  # [kN/m^3]
-        self.gamma_k1w = 20 # [kN/m^3]
+        self.gamma_k1w = 22 # [kN/m^3]
         self.gamma_prime = self.gamma_k1w - 9.807 # [kN/m^3]
         if self.hw1 == 0:
             self.gamma_k1w = self.gamma_k_1
@@ -24,12 +24,12 @@ class RetainingWall2: # Wide heel
             self.alpha_c = math.atan((self.b - self.ts) / self.h) # [radians]
         else:
             self.alpha_c = 0
-        self.phi_k_1 = 35 # [degrees]
-        self.phi_k_2 = 26 # [degrees]
-        self.Df = 1.2 # [m]
-        self.gamma_concrete = 25 # [kN/m^3]
+        self.phi_k_1 = 34 # [degrees]
+        self.phi_k_2 = 30 # [degrees]
+        self.Df = 1.3 # [m]
+        self.gamma_concrete = 24 # [kN/m^3]
         self.q = 10 # [kN/m]
-        betta_q = 0# degrees
+        betta_q = 15 # degrees
         self.betta_q = math.radians(betta_q) # [radians]
         self.H = self.tb + self.h
         self.sigma_rd = 262  # [kN/m^2]
@@ -57,16 +57,14 @@ class RetainingWall2: # Wide heel
         else:
             bh_geometrical = self.B - self.bt - self.ts
         # Wide heel check
-        #bh = self.h/tg_gamma- self.b + self.ts
-        bh = (self.H - self.tb) * tg_gamma
+        bh = self.h * tg_gamma
         if bh < 0:
-            #print(f'\nCalculated bh={round(bh, 2)} <=0 [m] >> bh={round(bh_geometrical,2)} [m] [accepted]\n\n')
             bh = bh_geometrical
-        elif math.ceil(bh * 10) / 10 > 0 and bh < bh_geometrical:
-           #print(f'\nCalculated bh={bh} >=0 [m] and bh<={round(bh_geometrical,2)} [m] >> bh = {round(bh_geometrical,2)} [m] [accepted]\n\n')
+        elif math.ceil(bh * 10) / 10 >= 0 and bh <= bh_geometrical:
             bh = bh_geometrical
         else:
             bh = math.ceil(bh * 10) / 10
+        # bh = 1.7 ##
         return bh
 
     def bh_calculated(self):
@@ -148,10 +146,7 @@ class RetainingWall2: # Wide heel
     def gc2(self): # Concrete weight 2
         B = self.B_final()
         bh = self.bh_rankine()
-        if self.b > 0:
-            gc2 = (B - bh - self.ts - self.bt) * self.h / 2 * self.gamma_concrete
-        else:
-            gc2 = 0
+        gc2 = (B - bh - self.ts - self.bt) * self.h / 2 * self.gamma_concrete
         return gc2
 
     def gc3(self): # Concrete weight 3
@@ -170,12 +165,14 @@ class RetainingWall2: # Wide heel
         ka = self.coefficient_ka(phi, stability)
         B = self.B_final()
         hg1 = self.gamma_k_1 * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2) ** 2 * ka * math.cos(self.betta_q) / 2
+        #hg1 = self.gamma_k_1 *self.hw2 ** 2 * ka * math.cos(self.betta_q) / 2
         return hg1
 
     def hg2(self, phi, stability=False):
         ka = self.coefficient_ka(phi,stability)
         B = self.B_final()
         hg2 = self.gamma_k_1 * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2) * ka * math.cos(self.betta_q) * self.hw1
+        #hg2 = self.gamma_k_1 * self.hw2 * ka * math.cos(self.betta_q) * self.hw1
         return hg2
 
     def hg3(self, phi, stability=False):
@@ -187,6 +184,7 @@ class RetainingWall2: # Wide heel
         B = self.B_final()
         ka = self.coefficient_ka(phi,stability)
         hq = self.q * ka * math.cos(self.betta_q) * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2 + self.hw1)
+        #hq = self.q * ka * math.cos(self.betta_q) * (self.hw2 + self.hw1)
         return hq
 
     def vq(self):
@@ -215,8 +213,8 @@ class RetainingWall2: # Wide heel
 
     def hd_hg2(self):
         B = self.B_final()
-        vd_hg2 = B/2
-        return vd_hg2
+        hd_hg2 = B/2
+        return hd_hg2
 
     def vd_hg3(self):
         vd_vg3 = self.hw1 / 3
@@ -224,8 +222,8 @@ class RetainingWall2: # Wide heel
 
     def hd_hg3(self):
         B = self.B_final()
-        vd_hg1 = B/2
-        return vd_hg1
+        hd_hg3 = B/2
+        return hd_hg3
 
     def vd_hw(self):
         vd_hw = self.hw1 / 3
