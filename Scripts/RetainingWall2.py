@@ -2,13 +2,13 @@ import math
 
 class RetainingWall2: # Wide heel
     def __init__(self):
-        self.hw1 = 2 # [m]
-        self.ts = 0.3 # [m]
-        self.tb = 0.8 # [m]
-        self.B = 3.5 # [m] appr. (0.5-0.7)*H
-        self.b = 1.4 # [m]
-        self.bt = 0.4 # [m]
-        self.h = 3.2 # [m]
+        self.hw1 = 0 # [m]
+        self.ts = 0.7 # [m]
+        self.tb = 0.7 # [m]
+        self.B = 4.5 # [m] appr. (0.5-0.7)*H
+        self.b = 0 # [m]
+        self.bt = 0.6 # [m]
+        self.h = 6 # [m]
         self.H = self.h + self.tb # [m]
         self.gamma_k_1 = 19 # [kN/m^3]
         self.gamma_k_2 = 18  # [kN/m^3]
@@ -24,12 +24,12 @@ class RetainingWall2: # Wide heel
             self.alpha_c = math.atan((self.b - self.ts) / self.h) # [radians]
         else:
             self.alpha_c = 0
-        self.phi_k_1 = 34 # [degrees]
-        self.phi_k_2 = 30 # [degrees]
-        self.Df = 1.3 # [m]
-        self.gamma_concrete = 24 # [kN/m^3]
+        self.phi_k_1 = 35 # [degrees]
+        self.phi_k_2 = 26 # [degrees]
+        self.Df = 1.2 # [m]
+        self.gamma_concrete = 25 # [kN/m^3]
         self.q = 10 # [kN/m]
-        betta_q = 15 # degrees
+        betta_q = 0 # degrees
         self.betta_q = math.radians(betta_q) # [radians]
         self.H = self.tb + self.h
         self.sigma_rd = 262  # [kN/m^2]
@@ -64,7 +64,7 @@ class RetainingWall2: # Wide heel
             bh = bh_geometrical
         else:
             bh = math.ceil(bh * 10) / 10
-        # bh = 1.7 ##
+        #bh = 1.7 ##
         return bh
 
     def bh_calculated(self):
@@ -183,13 +183,13 @@ class RetainingWall2: # Wide heel
     def hq(self, phi, stability=False):
         B = self.B_final()
         ka = self.coefficient_ka(phi,stability)
-        hq = self.q * ka * math.cos(self.betta_q) * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2 + self.hw1)
+        hq = self.q * ka * ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw1 + self.hw2) * math.cos(self.betta_q)
         #hq = self.q * ka * math.cos(self.betta_q) * (self.hw2 + self.hw1)
         return hq
 
     def vq(self):
         B = self.B_final()
-        vq = self.q * (B - self.ts - self.bt)/math.cos(self.betta_q)
+        vq = self.q * (B - self.bt - self.ts) * math.cos(self.betta_q)
         return vq
 
     def hw(self):
@@ -231,13 +231,18 @@ class RetainingWall2: # Wide heel
 
     def vd_hq(self):
         B = self.B_final()
-        vd_hq = (((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2 + self.hw1)/2)
+        vd_hq = ((B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2 + self.hw1)/2
         return vd_hq
 
     def hd_hq(self):
         B = self.B_final()
         hd_hq = B/2
         return hd_hq
+
+    def hd_q(self):
+        B = self.B_final()
+        hd_q = B/2 - (B - self.bt - self.ts) / 2
+        return hd_q
 
     def sum_of_vertical_forces_g(self, phi=None, stability=False):
         if phi is None:
@@ -259,13 +264,24 @@ class RetainingWall2: # Wide heel
         return vg
 
     def sum_of_vertical_forces_q(self):
-        vq_sum = self.vq()
+        hq = self.hq(phi=self.phi_k_1)
+        vq_sum = self.vq() + hq * math.sin(self.betta_q)
         return vq_sum
 
-    def sum_of_horizontal_forces_g(self):
-        def sum_methods(prefix, count):
-            return sum(getattr(self, f"{prefix}{i}")() for i in range(1, count + 1))
-        hg = sum_methods("hg", 3)
+    def sum_of_horizontal_forces_g(self, phi=None, stability=False):
+        if phi is None:
+            phi = self.phi_k_1  # Default to self.phi_k_1 if phi is not provided
+
+        def sum_methods(prefix, count, phi=None, stability=None):
+            total = 0
+            for i in range(1, count + 1):
+                method = getattr(self, f"{prefix}{i}")
+                if prefix == "hg":
+                    total += method(phi, stability)
+                else:
+                    total += method()
+            return total
+        hg = sum_methods("hg", 3, phi, stability)
         hw = self.hw()
         hg_sum = hg * math.cos(self.betta_q) + hw
         return hg_sum
@@ -296,10 +312,10 @@ class RetainingWall2: # Wide heel
         return mg
 
     def moment_q_around_t(self):
-        bh = self.bh_rankine()
         B = self.B_final()
-        mq = (self.hq(phi=self.phi_k_1) * (math.cos(self.betta_q) * (self.H + math.tan(self.betta_q) * (bh + self.b - self.ts))/2) -
-              self.vq() * (B / 2 - (B - self.bt - self.ts) / 2))
+        mq = (self.hq(phi=self.phi_k_1) * math.cos(self.betta_q) * self.vd_hq() -
+              self.hq(phi=self.phi_k_1) * self.hd_hq() * math.sin(self.betta_q) -
+              self.q * (B - self.bt - self.ts) * self.hd_q())
         return mq
 
     def stability_check(self):
