@@ -14,6 +14,7 @@ class RetainingWall2Tex(RetainingWall2):
             't_s' : f'{self.ts}',
             'b_t' : f'{self.bt}',
             't_b' : f'{self.tb}',
+            'h_prvo' : f'{self.h}',
             'gamma_k_1' : f'{self.gamma_k_1}',
             'gamma_k_2' : f'{self.gamma_k_2}',
             'gamma_prime' : f'{self.gamma_prime}',
@@ -51,12 +52,12 @@ class RetainingWall2Tex(RetainingWall2):
             'gs_six_eq_zero': f'{round(self.gs6_hw1_eq_zero(),2)}',
             'koeficijent_ka': f'{round(self.coefficient_ka(phi=self.phi_k_1), 3)}',
             'phi_prime1d' : f'{round(self._phi_prime(phi=self.phi_k_1) * 180/math.pi, 3)}',
-            'v_q' : f'{round(self.vq(), 2)}',
+            'vqq' : f'{round(self.vq(), 2)}',
             'w_2' : f'{round(self.w2(), 2)}',
             'h_g1' : f'{round(self.hg1(phi=self.phi_k_1), 2)}',
             'h_g2' : f'{round(self.hg2(phi=self.phi_k_1), 2)}',
             'h_g3': f'{round(self.hg3(phi=self.phi_k_1), 2)}',
-            'h_q' : f'{round(self.hq(phi=self.phi_k_1), 2)}',
+            'hqq' : f'{round(self.hq(phi=self.phi_k_1), 2)}',
             'h_w' : f'{round(self.hw(), 2)}',
             'hd_hg1' : f'{round(self.hd_hg1(), 3)}',
             'vd_hg1' : f'{round(self.vd_hg1(), 3)}',
@@ -64,6 +65,10 @@ class RetainingWall2Tex(RetainingWall2):
             'vd_hg3' : f'{round(self.vd_hg3(), 3)}',
             'vd_hw' : f'{round(self.vd_hw(), 3)}',
             'vd_hq' : f'{round(self.vd_hq(), 3)}',
+            'v_gu' : f'{round(self.sum_of_vertical_forces_g(phi=None, stability=False), 2)}',
+            'h_gu' : f'{round(self.sum_of_horizontal_forces_g(), 2)}',
+            'h_qu' : f'{round(self.sum_of_horizontal_forces_q(), 2)}',
+            'v_qu' : f'{round(self.sum_of_vertical_forces_q(), 2)}',
         }
 
     def tex_file_path(self):
