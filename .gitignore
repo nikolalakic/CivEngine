@@ -166,3 +166,5 @@ test.py
 /LatexTemplates/*.out
 /LatexTemplates/*.pdf
 /LatexTemplates/*.synctex.gz
+/Scripts/~$SeizmikaPodaci.xlsx
+/Scripts/SeizmikaPodaci.xlsx
