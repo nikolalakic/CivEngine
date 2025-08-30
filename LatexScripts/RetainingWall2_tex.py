@@ -60,6 +60,7 @@ class RetainingWall2Tex(RetainingWall2):
             'hqq' : f'{round(self.hq(phi=self.phi_k_1), 2)}',
             'h_w' : f'{round(self.hw(), 2)}',
             'hd_hg1' : f'{round(self.hd_hg1(), 3)}',
+            'hd_q' : f'{round(self.hd_q(), 2)}',
             'vd_hg1' : f'{round(self.vd_hg1(), 3)}',
             'vd_hg2' : f'{round(self.vd_hg2(), 3)}',
             'vd_hg3' : f'{round(self.vd_hg3(), 3)}',
@@ -69,6 +70,8 @@ class RetainingWall2Tex(RetainingWall2):
             'h_gu' : f'{round(self.sum_of_horizontal_forces_g(), 2)}',
             'h_qu' : f'{round(self.sum_of_horizontal_forces_q(), 2)}',
             'v_qu' : f'{round(self.sum_of_vertical_forces_q(), 2)}',
+            'm_g' : f'{round(self.moment_g_around_t(), 2)}',
+            'm_q' : f'{round(self.moment_q_around_t(), 2)}'
         }
 
     def tex_file_path(self):

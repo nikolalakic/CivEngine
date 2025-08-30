@@ -334,12 +334,13 @@ v_{d,Hq} &= \frac{(B - b_{t} - t_{s}) \cdot \tan(\beta_{q}) + h_{w2} + h_{w1}}{2
 \subsection*{Suma vertikalnih komponenti optere\'cenja:}
 
 \begin{align*}
-V_{g,u} &= \sum_{i=1}^{3} H_{gi} \cdot \sin(\beta_{q}) + \sum_{1}^3 {G_{ci}} + \sum_{1}^{6} {G_{si}} -W_{2} \\
+V_{g,u} &= \sum_{i=1}^{3} H_{gi} \cdot \sin(\beta_{q}) + \sum_{i=1}^3 {G_{ci}} + \sum_{i=1}^{6} {G_{si}} -W_{2} \\
 		&= \left( h_g1 + h_g2 + h_g3 \right) \cdot sin(betta_q)+  \\
 		&= gc1+gc2+gc3 + \\
 		&= gs1+gs2+gs3+gs4+gs5+gs6 - w2 \\
 		&= v_gu \text{ } [kN/m] \\
 V_{q,u} &= V_{q} + H_{q} \cdot \sin(\beta_{q}) \\
+		&= vqq + hqq \cdot \sin (betta_q) \\
 		&= v_qu \text{ } [kN/m]
 \end{align*}
 
@@ -354,5 +355,57 @@ H_{q,u} &= H_{q} \cdot \cos (\beta_{q}) \\
 		&= h_qu \text{ } [kN/m]
 \end{align*}
 
+\subsection*{Svo\dj enje optere\'cenja na te\v{z}i\v{s}te temeljne spojnice T:}
+Vertikalne komponente:
+\begin{align*}
+\left[V_{g,u}, V_{q,u} \right] = \left[v_gu, v_qu \right] \text{ } [kN/m]
+\end{align*}
+Horizontalne komponente:
+\begin{align*}
+\left[ H_{g,u}, H_{q,u} \right] = \left[ h_gu, h_qu \right] \text{ } [kN/m]
+\end{align*}
+Momenat od stalnog optere\'cenja u te\v{z}i\v{s}tu T (pozitivan znak je u smeru kazaljke na satu):
+
+\begin{align*}
+m_{g} &= G_{c1} \cdot \left( \frac{B}{2} - b_{t} - \frac{t_{s}}{2} \right) +  \\
+   &\quad G_{c2} \cdot \left( \frac{B}{2} - b_{t} - t_{s} - \frac{b - t_{s}}{3} \right) + \\
+   &\quad G_{c3} \cdot \left( \frac{B}{2} - \frac{B}{2} \right) + \\
+   &\quad G_{s1} \cdot \left( \frac{B}{2} - \frac{b_{t}}{2} \right) + \\
+   &\quad G_{s2} \cdot \left( \frac{B}{2} - b_{t} - t_{s} - \frac{2}{3} \cdot \tan (\alpha_{c}) \cdot h_{w2} \right) - \\
+   &\quad G_{s3} \cdot \left( \frac{b_{t} + t_{s} + \tan (\alpha_{c}) \cdot h_{w2}}{2}  \right) - \\
+   &\quad G_{s4} \cdot \left( \frac{B}{2} - \frac{B - b_{t} - t_{s}}{3} \right) + \\
+   &\quad G_{s5} \cdot \left( \frac{B}{2} - \left(b_{t} + t_{s} + \tan(\alpha_{c}) \cdot h_{w2} + \frac{2}{3} \left(b - t_{s} - \tan(\alpha_{c}) \cdot h_{w2} \right)\right) \right) - \\
+   &\quad G_{s6} \cdot \left( \frac{B}{2} - \frac{B}{3} \right) + \\
+   &\quad H_{g1} \cdot  \left( \cos (\beta_{q}) \cdot v_{d,Hg1} -  \sin (\beta_{q}) \cdot h_{d,Hg1} \right) + \\
+   &\quad H_{g2} \cdot \left( \cos (\beta_{q}) \cdot v_{d,Hg2} -  \sin (\beta_{q}) \cdot h_{d,Hg2} \right) +  \\
+   &\quad H_{g3} \cdot \left( \cos (\beta_{q}) \cdot v_{d,Hg3} -  \sin (\beta_{q}) \cdot h_{d,Hg3} \right) +  \\
+   &\quad H_{w} \cdot \frac{h_{w1}}{3} + \\
+   &\quad W_2 \cdot \left( \frac{B}{2} - \frac{B}{3} \right) \\
+m_{g} &= gc1 \cdot \left( \frac{B_final}{2} - b_t - \frac{t_s}{2} \right) +  \\
+   &\quad gc2 \cdot \left( \frac{B_final}{2} - b_t - t_s - \frac{b - t_s}{3} \right) + \\
+   &\quad gc3 \cdot \left( \frac{B_final}{2} - \frac{B_final}{2} \right) + \\
+   &\quad gs1 \cdot \left( \frac{B_final}{2} - \frac{b_t}{2} \right) + \\
+   &\quad gs2 \cdot \left( \frac{B_final}{2} - b_t - t_s - \frac{2}{3} \cdot \tan (alpha_c) \cdot hw2 \right) - \\
+   &\quad gs3 \cdot \left( \frac{b_t + t_s + \tan (alpha_c) \cdot hw2}{2}  \right) - \\
+   &\quad gs4 \cdot \left( \frac{B_final}{2} - \frac{B_final - b_t - t_s}{3} \right) + \\
+   &\quad gs5 \cdot \left( \frac{B_final}{2} - \left(b_t + t_s + \tan(alpha_c) \cdot hw2 + \frac{2}{3} \left(b - t_s - \tan(alpha_c) \cdot hw2 \right)\right) \right) - \\
+   &\quad gs6 \cdot \left( \frac{B_final}{2} - \frac{B_final}{3} \right) + \\
+   &\quad h_g1 \cdot  \left( \cos (betta_q) \cdot vd_hg1 -  \sin (betta_q) \cdot hd_hg1 \right) + \\
+   &\quad h_g2 \cdot \left( \cos (betta_q) \cdot vd_hg2 -  \sin (betta_q) \cdot hd_hg1 \right) +  \\
+   &\quad h_g3 \cdot \left( \cos (betta_q) \cdot vd_hg3 -  \sin (betta_q) \cdot hd_hg1 \right) +  \\
+   &\quad h_w \cdot \frac{hw1}{3} + \\
+   &\quad w_2 \cdot \left( \frac{B_final}{2} - \frac{B_final}{3} \right) \\
+m_{g} &= m_g \text{ } [kNm/m]
+\end{align*}
+Momenat od korisnog optere\'cenja u te\v{z}i\v{s}tu T (pozitivan znak je u smeru kazaljke na satu):
+\begin{align*}
+m_{q} &= H_{q} \cdot \cos (\beta_{q}) \cdot v_{d,Hq} - \\
+	  &\quad H_{q} \cdot \sin (\beta_{q}) \cdot h_{d,Hq} - \\	
+	  &\quad q \cdot (B - b_{t} - t_{s}) \cdot h_{d,Q} \\
+m_{q} &= hqq \cdot \cos (betta_q) \cdot vd_hq - \\
+	  &\quad hqq \cdot \sin (betta_q) \cdot hd_hg1 - \\	
+	  &\quad q_u \cdot (B_final - b_t - t_s) \cdot hd_q \\
+m_{q} &= m_q \text{ } [kNm/m]
+\end{align*}
 
 \end{document}
