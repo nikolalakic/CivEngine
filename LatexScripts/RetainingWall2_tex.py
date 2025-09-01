@@ -15,6 +15,7 @@ class RetainingWall2Tex(RetainingWall2):
             'b_t' : f'{self.bt}',
             't_b' : f'{self.tb}',
             'h_prvo' : f'{self.h}',
+            'bb' : f'{self.b}',
             'gamma_k_1' : f'{self.gamma_k_1}',
             'gamma_k_2' : f'{self.gamma_k_2}',
             'gamma_prime' : f'{self.gamma_prime}',
@@ -51,7 +52,9 @@ class RetainingWall2Tex(RetainingWall2):
             'gs_three_eq_zero' : f'{round(self.gs3_hw1_eq_zero(),2)}',
             'gs_six_eq_zero': f'{round(self.gs6_hw1_eq_zero(),2)}',
             'koeficijent_ka': f'{round(self.coefficient_ka(phi=self.phi_k_1), 3)}',
-            'phi_prime1d' : f'{round(self._phi_prime(phi=self.phi_k_1) * 180/math.pi, 3)}',
+            'kstb_1': f'{round(self.coefficient_ka(phi=self.phi_k_1, stability=True), 3)}',
+            'phi_prime_stab_1' : f'{round(self._phi_prime(phi=self.phi_k_1, stability=True)* 180/math.pi, 3)}',
+            'phi_prime_stab_2': f'{round(self._phi_prime(phi=self.phi_k_2) * 180 / math.pi, 3)}',
             'vqq' : f'{round(self.vq(), 2)}',
             'w_2' : f'{round(self.w2(), 2)}',
             'h_g1' : f'{round(self.hg1(phi=self.phi_k_1), 2)}',
@@ -71,7 +74,29 @@ class RetainingWall2Tex(RetainingWall2):
             'h_qu' : f'{round(self.sum_of_horizontal_forces_q(), 2)}',
             'v_qu' : f'{round(self.sum_of_vertical_forces_q(), 2)}',
             'm_g' : f'{round(self.moment_g_around_t(), 2)}',
-            'm_q' : f'{round(self.moment_q_around_t(), 2)}'
+            'm_q' : f'{round(self.moment_q_around_t(), 2)}',
+            'med_gross' : f'{round(self.maximum_gross_soil_stress_med(), 2)}',
+            'ved_gross' : f'{round(self.maximum_gross_soil_stress_ved(), 2)}',
+            'area_of_footing' : f'{round(self.area_of_footing(), 2)}',
+            'section_modulus' : f'{round(self.section_modulus(), 2)}',
+            'sigma_max_gross' : f'{round(self.maximum_gross_soil_stress(), 2)}',
+            'sigma_min_gross' : f'{round(self.minimum_gross_soil_stress(), 2)}',
+            'max_gross_stress_check': f'\\True' if self.maximum_gross_soil_stress_check() else f'\\False',
+            'min_gross_stress_check': f'\\True' if self.minimum_gross_soil_stress_check() else f'\\False',
+            'paramm': f'{round(self.param_definition(), 2)}',
+            'paramq': f'{round(self.paramq_definition(), 2)}',
+            'hg1_stab' : f'{round(self.hg1(phi=self.phi_k_1, stability=True), 2)}',
+            'hg2_stab': f'{round(self.hg2(phi=self.phi_k_1, stability=True), 2)}',
+            'hg3_stab': f'{round(self.hg3(phi=self.phi_k_1, stability=True), 2)}',
+            'med_stb' : f'{round(self.stability_check_mstb(), 2)}',
+            'med_dstb': f'{round(self.stability_check_mdstb(), 2)}',
+            'overturning_stability_check': f'\\True' if self.stability_check() else f'\\False',
+            'vg_slide': f'{round(self.vg_slide(), 2)}',
+            'vq_slide': f'{round(self.vq_slide(), 2)}',
+            'hrd_slide': f'{round(self.hrd_slide(), 2)}',
+            'hd_slide': f'{round(self.hd_slide(), 2)}',
+            'vd_slide': f'{round(self.vd_slide(), 2)}',
+            'sliding_check': f'\\True' if self.sliding_check() else f'\\False',
         }
 
     def tex_file_path(self):
@@ -111,9 +136,6 @@ class RetainingWall2Tex(RetainingWall2):
                 content = content.replace(src, target)
         with open(texfile, 'w', encoding='UTF-8') as outfile:
             outfile.write(content)
-
-
-
 
 def main():
     obj = RetainingWall2Tex()

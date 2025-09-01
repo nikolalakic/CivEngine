@@ -47,7 +47,8 @@ class RetainingWall2: # Wide heel
     def _phi_prime(phi, stability=False):
         gamma_prime_phi = 1.25 if stability else 1
         phi_rad = math.radians(phi)
-        return math.atan(math.tan(phi_rad) / gamma_prime_phi)
+        angle = math.atan(math.tan(phi_rad) / gamma_prime_phi)
+        return angle
 
     def bh_rankine(self):
         phi_prime_d_1 = self._phi_prime(self.phi_k_1)
@@ -318,6 +319,22 @@ class RetainingWall2: # Wide heel
               self.q * (B - self.bt - self.ts) * self.hd_q())
         return mq
 
+    def param_definition(self):
+        bh = self.bh_rankine()
+        if self.b == 0:
+            param = bh
+        else:
+            param = bh + self.b - self.ts
+        return param
+
+    def paramq_definition(self):
+        bh = self.bh_rankine()
+        if self.b == 0:
+            param_q = bh / 2 + self.ts + self.bt
+        else:
+            param_q = bh / 2 + self.b - self.ts + self.bt
+        return param_q
+
     def stability_check(self):
         B = self.B_final()
         bh = self.bh_rankine()
@@ -339,9 +356,9 @@ class RetainingWall2: # Wide heel
                     self.gs6() * (bh / 2 + self.b + self.bt) +
                     self.hg1(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B +
                     self.hg2(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B +
-                    self.hg3(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B +
-                    self.hq(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B) +
-                    self.vq() * param_q  *  self.gamma_q_stb)
+                    self.hg3(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B) +
+                   (self.hq(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B +
+                    self.vq() * param_q)  *  self.gamma_q_stb)
         med_dstb = (self.gamma_g_dstb *
                     (self.hg1(phi=self.phi_k_1, stability=True) * math.cos(self.betta_q) * (self.hw1 + math.tan(self.betta_q) * param + self.hw2/3) +
                      self.hg2(phi=self.phi_k_1, stability=True) * math.cos(self.betta_q) * self.hw1 / 2 +
@@ -362,6 +379,48 @@ class RetainingWall2: # Wide heel
                   " \n")
             a = False
         return a
+
+    def stability_check_mstb(self):
+        B = self.B_final()
+        bh = self.bh_rankine()
+        if self.b == 0:
+            param_q = bh / 2 + self.ts + self.bt
+        else:
+            param_q =  bh / 2 + self.b - self.ts + self.bt
+        med_stb = (self.gamma_g_stb *
+                   (self.gc1() * (self.ts / 2 + self.bt) +
+                    self.gc2() * ((self.b - self.ts) / 3 + self.bt + self.ts) +
+                    self.gc3() * (B / 2) +
+                    self.gs1() * (self.bt / 2) +
+                    self.gs2() * (2 / 3 * (math.tan(self.alpha_c) * self.hw2) + self.ts + self.bt) +
+                    self.gs3() * ((B + ((math.tan(self.alpha_c) * self.hw2) + self.ts + self.bt))/2) +
+                    self.gs4() * (2 / 3 * (B - self.bt - self.ts) + self.ts + self.bt) +
+                    self.gs5() * (self.bt + self.ts + (math.tan(self.alpha_c) * self.hw2) + 2 / 3 * ((self.hw1 - self.tb) * math.tan(self.alpha_c))) +
+                    self.gs6() * (bh / 2 + self.b + self.bt) +
+                    self.hg1(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B +
+                    self.hg2(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B +
+                    self.hg3(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B) +
+                   (self.hq(phi=self.phi_k_1, stability=True) * math.sin(self.betta_q) * B +
+                    self.vq() * param_q)  *  self.gamma_q_stb)
+        return med_stb
+
+    def stability_check_mdstb(self):
+        B = self.B_final()
+        bh = self.bh_rankine()
+        if self.b == 0:
+            param = bh
+        else:
+            param = bh + self.b - self.ts
+        med_dstb = (self.gamma_g_dstb *
+                    (self.hg1(phi=self.phi_k_1, stability=True) * math.cos(self.betta_q) * (self.hw1 + math.tan(self.betta_q) * param + self.hw2/3) +
+                     self.hg2(phi=self.phi_k_1, stability=True) * math.cos(self.betta_q) * self.hw1 / 2 +
+                     self.hg3(phi=self.phi_k_1, stability=True) * math.cos(self.betta_q) * self.hw1 / 3 +
+                     self.w2() * 2 / 3 * B +
+                     self.hw() * self.hw1 / 3
+                     ) + self.gamma_q_dstb * (self.hq(phi=self.phi_k_1, stability=True) * math.cos(self.betta_q) *
+                                              (self.H + (math.tan(self.betta_q) * (bh + self.b - self.ts))) / 2)
+                    )
+        return med_dstb
 
     def maximum_gross_soil_stress_check(self): # ULS STR
         B = self.B_final()
@@ -384,6 +443,54 @@ class RetainingWall2: # Wide heel
                  f" <= sigma_Rd = {round(self.sigma_rd, 1)} [kN/m]\n")
             a = True
         return a
+
+    def maximum_gross_soil_stress_ved(self): # ULS STR
+        vg = self.sum_of_vertical_forces_g()
+        vq = self.sum_of_vertical_forces_q()
+        v = self.gamma_g * vg + self.gamma_q * vq
+        return v
+
+    def maximum_gross_soil_stress_med(self): # ULS STR
+        mg = self.moment_g_around_t()
+        mq = self.moment_q_around_t()
+        m = self.gamma_g * mg + self.gamma_q * mq
+        return m
+
+    def area_of_footing(self):
+        B = self.B_final()
+        f = B * 1
+        return f
+
+    def section_modulus(self):
+        B = self.B_final()
+        w = 1 / 6 * B ** 2 * 1
+        return w
+
+    def maximum_gross_soil_stress(self): # ULS STR
+        B = self.B_final()
+        f = B * 1
+        vg = self.sum_of_vertical_forces_g()
+        vq = self.sum_of_vertical_forces_q()
+        mg = self.moment_g_around_t()
+        mq = self.moment_q_around_t()
+        w = 1 / 6 * B ** 2 * 1
+        v = self.gamma_g * vg + self.gamma_q * vq
+        m = self.gamma_g * mg + self.gamma_q * mq
+        sigma_max = v/f + m/w
+        return sigma_max
+
+    def minimum_gross_soil_stress(self): # ULS STR
+        B = self.B_final()
+        f = B * 1
+        vg = self.sum_of_vertical_forces_g()
+        vq = self.sum_of_vertical_forces_q()
+        mg = self.moment_g_around_t()
+        mq = self.moment_q_around_t()
+        w = 1 / 6 * B ** 2 * 1
+        v = self.gamma_g * vg + self.gamma_q * vq
+        m = self.gamma_g * mg + self.gamma_q * mq
+        sigma_min = v/f - m/w
+        return sigma_min
 
     def minimum_gross_soil_stress_check(self): # ULS STR
         vg = self.sum_of_vertical_forces_g()
@@ -414,7 +521,7 @@ class RetainingWall2: # Wide heel
         vd = vg + vq
         hrd = (vd * math.tan(self._phi_prime(phi=self.phi_k_2))) / self.gamma_r_h
         hd = (self.gamma_g * (self.hg1(phi=self.phi_k_1) * math.cos(self.betta_q) + self.hg2(phi=self.phi_k_1) * math.cos(self.betta_q) +
-              self.hg3(phi=self.phi_k_1) * math.cos(self.betta_q)) + self.gamma_g * self.hw() +
+              self.hg3(phi=self.phi_k_1) * math.cos(self.betta_q) + self.hw()) +
               self.gamma_q * self.hq(phi=self.phi_k_1) * math.cos(self.betta_q))
         if hd/hrd > 1:
             print("Sliding stability check....FAIL!\n "
@@ -425,6 +532,33 @@ class RetainingWall2: # Wide heel
                  f"hd/h_rd = {round(hd / hrd, 2)} <= 1")
             a = True
         return a
+
+    def vg_slide(self):
+        vg_slide = self.gamma_g_fav * (self.sum_of_vertical_forces_g() + self.w2()) - self.w2() * self.gamma_g
+        return vg_slide
+
+    def vq_slide(self):
+        vq_slide = self.gamma_q * self.vq()
+        return vq_slide
+
+    def hrd_slide(self):
+        vd = self.vg_slide() + self.vq_slide()
+        hrd_slide = (vd * math.tan(self._phi_prime(phi=self.phi_k_2))) / self.gamma_r_h
+        return hrd_slide
+
+    def hd_slide(self):
+        hd_slide = (self.gamma_g * (
+                    self.hg1(phi=self.phi_k_1) * math.cos(self.betta_q) + self.hg2(phi=self.phi_k_1) * math.cos(
+                self.betta_q) +
+                    self.hg3(phi=self.phi_k_1) * math.cos(self.betta_q) + self.hw()) +
+              self.gamma_q * self.hq(phi=self.phi_k_1) * math.cos(self.betta_q))
+        return hd_slide
+
+    def vd_slide(self):
+        vg=self.vg_slide()
+        vq=self.vq_slide()
+        vd_slide = vg + vq
+        return vd_slide
 
     def dimensioning_of_wall(self):
         B = self.B_final()
