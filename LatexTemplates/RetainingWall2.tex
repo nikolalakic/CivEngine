@@ -54,7 +54,7 @@
 \tableofcontents
 \end{titlepage}
 
-\section*{Ulazni parametri potpornog zida}
+\section*{Ulazni parametri potpornog zida ukupne visine $H_{u} = h_u m$}
 \addcontentsline{toc}{section}{Ulazni parametri potpornog zida}
 
 \vspace{3cm}
@@ -308,7 +308,7 @@ Koeficijent aktivnog pritiska tla $K_{a}$:
 
 \begin{align*}
 \beta_{q} &= betta_q ^\circ \\
-\phi'_{d1} &= phi_prime1d ^\circ  \\
+\phi'_{d1} &= phi_prime_stab_1 ^\circ  \\
 k_a &= \frac{\cos(\beta_q) - \sqrt{\sin^2(\phi'_{d1}) - \sin^2(\beta_q)}}{\cos(\beta_q) + \sqrt{\sin^2(\phi'_{d1}) - \sin^2(\beta_q)}} \\
 	&= koeficijent_ka
 \end{align*}
@@ -637,5 +637,57 @@ med_dstb &\leq med_stb \quad \left( overturning_stability_check \right)
 H_{d} \leq H_{Rd} \text{ } [kN/m]  \\
 hd_slide \leq hrd_slide \quad \left( sliding_check \right)
 \end{align*}
+
+\subsection*{Dimenzionisanje zida potpornog zida}
+
+
+\begin{align*}
+h_{w1} &= hw1 \quad [m] \rightarrow \\
+B &= B_final \quad [m] \\
+K_{a} &= koeficijent_ka \quad [m]\\
+H_{g1} &= h_g1 \quad \frac{kN}{m}\\
+H_{g2} &= h_g2 \quad \frac{kN}{m}\\
+H_{g3} &= h_g3 \quad \frac{kN}{m}\\
+param_{hg2} &= param_hg2 \quad [m]\\
+param_{hg3} &= param_hg3 \quad [m]\\
+param_{hw} &= param_hw \quad [m] \\
+param_{hr} &= param_hr \quad [m]
+\end{align*}
+
+Momenti u dnu potpornog zida (u uklje\v{s}tenju):
+
+\begin{align*}
+M_{g} = & \left( \cos(\beta_q)\right) \cdot \left( h_{g1} \cdot \left(h_{w1} + \frac{h_{w2} - t_{b}}{3}\right) \right. \\
+    & \left. + h_{g2} \cdot \cos(\beta_q) \cdot param_{hg2} + h_{g3} \cdot \cos(\beta_q) \cdot param_{hg3} \right. \\
+    & \left. + h_{w} \cdot param_{hw}\right) \\
+    & - \sin(\beta_q) \cdot \left(B - b_{t} - \frac{param_{hr}}{2}\right) \\
+    & \cdot \left( h_{g1}(\phi = \phi_{k1}) + h_{g2}(\phi = \phi_{k1}) + h_{g3}(\phi = \phi_{k1}) \right)\\
+M_{g} = & \left( \cos(betta_q)\right) \cdot \left( h_g1 \cdot \left(hw1 + \frac{hw2 - t_b}{3}\right) \right. \\
+    & \left. + h_g2 \cdot \cos(betta_q) \cdot param_hg2 + h_g3 \cdot \cos(betta_q) \cdot param_hg3 \right. \\
+    & \left. + h_w \cdot param_hw\right) \\
+    & - \sin(betta_q) \cdot \left(B_final - b_t - \frac{param_hr}{2}\right) \\
+    & \cdot \left( h_g1 + h_g2 + h_g3 \right)\\
+    &= mg_wall \quad \frac{kNm}{m} \\
+M_{q} &= h_{q} \cdot \left(1 - \frac{t_{b}}{H_{u}}\right) \cdot \frac{\left(H_{u} - t_{b}\right)}{2}\\
+M_{q} &= h_qu \cdot \left(1 - \frac{t_b}{h_u}\right) \cdot \frac{\left(h_u - t_b\right)}{2} \\
+      &= mq_wall \quad \frac{kNm}{m}
+\end{align*}
+
+Prora\v{c}unski moment:
+
+\begin{align*}
+M_{Ed} &= \gamma_{g} \cdot M_{g} + \gamma_{q} \cdot M_q \\
+	   &= gammag \cdot mg_wall + gammaq \cdot mq_wall \\
+	   &= med_wall \quad \frac{kNm}{m}
+\end{align*}
+
+Potrebna armatura u uklje\v{s}tenju zida (pretpostavljeno $d_{1}=5cm$):
+
+\begin{align*}
+A_{s1} &= \frac{M_{Ed}}{0.9 \cdot (t_{s} - 0.05) \cdot f_{yd}}\\
+	   &= \frac{med_wall}{0.9 \cdot (t_s - 0.05) \cdot 434800} \cdot 10^{4} \\
+	   &= as1_req \quad \frac{cm^2}{m}
+\end{align*}
+
 
 \end{document}

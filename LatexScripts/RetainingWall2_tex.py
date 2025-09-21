@@ -10,7 +10,7 @@ class RetainingWall2Tex(RetainingWall2):
         self.dict = {
             'hw1' : f'{self.hw1}',
             'hw2': f'{self.hw2}',
-            'B_final' : f'{self.B_final()}',
+            'B_final' : f'{round(self.B_final(),1)}',
             't_s' : f'{self.ts}',
             'b_t' : f'{self.bt}',
             't_b' : f'{self.tb}',
@@ -24,7 +24,7 @@ class RetainingWall2Tex(RetainingWall2):
             'phi_k_2' : f'{self.phi_k_2}',
             'h_u' : f'{round(self.total_H(), 2)}',
             'Df' : f'{self.Df}',
-            'b_h' : f'{self.bh_rankine()}',
+            'b_h' : f'{round(self.bh_rankine(), 2)}',
             'b_o': f'{self.b}',
             'sigma_rd' : f'{self.sigma_rd}',
             'q_u' : f'{self.q}',
@@ -37,7 +37,7 @@ class RetainingWall2Tex(RetainingWall2):
             'gamma_qdstb' : f'{self.gamma_q_dstb}',
             'gamma_rh' : f'{self.gamma_r_h}',
             'gamma_concrete' : f'{self.gamma_concrete}',
-            'bh_calculated' : f'{self.bh_calculated()}',
+            'bh_calculated' : f'{round(self.bh_calculated(),2)}',
             'gs1': f'{round(self.gs1(),2)}',
             'gs2': f'{round(self.gs2(),2)}',
             'gs3': f'{round(self.gs3(),2)}',
@@ -97,6 +97,14 @@ class RetainingWall2Tex(RetainingWall2):
             'hd_slide': f'{round(self.hd_slide(), 2)}',
             'vd_slide': f'{round(self.vd_slide(), 2)}',
             'sliding_check': f'\\True' if self.sliding_check() else f'\\False',
+            'param_hg2': f'{round(self.param_hg2(), 2)}',
+            'param_hg3': f'{round(self.param_hg3(), 2)}',
+            'param_hw': f'{round(self.param_hw(), 2)}',
+            'param_hr': f'{round(self.param_hr(), 2)}',
+            'mg_wall': f'{round(self.mg_wall(), 2)}',
+            'mq_wall': f'{round(self.mq_wall(), 2)}',
+            'med_wall': f'{round(self.med_wall(), 2)}',
+            'as1_req': f'{round(self.as1_req(), 2)}',
         }
 
     def tex_file_path(self):

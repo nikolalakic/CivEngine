@@ -2,16 +2,16 @@ import math
 
 class RetainingWall2: # Wide heel
     def __init__(self):
-        self.hw1 = 0 # [m]
+        self.hw1 = 1.5 # [m]
         self.ts = 0.7 # [m]
         self.tb = 0.7 # [m]
-        self.B = 4.5 # [m] appr. (0.5-0.7)*H
+        self.B = 5 # [m] appr. (0.5-0.7)*H
         self.b = 0 # [m]
-        self.bt = 0.6 # [m]
+        self.bt = 0.9 # [m]
         self.h = 6 # [m]
         self.H = self.h + self.tb # [m]
-        self.gamma_k_1 = 19 # [kN/m^3]
-        self.gamma_k_2 = 18  # [kN/m^3]
+        self.gamma_k_1 = 20 # [kN/m^3]
+        self.gamma_k_2 = 20  # [kN/m^3]
         self.gamma_k1w = 22 # [kN/m^3]
         self.gamma_prime = self.gamma_k1w - 9.807 # [kN/m^3]
         if self.hw1 == 0:
@@ -24,15 +24,15 @@ class RetainingWall2: # Wide heel
             self.alpha_c = math.atan((self.b - self.ts) / self.h) # [radians]
         else:
             self.alpha_c = 0
-        self.phi_k_1 = 35 # [degrees]
-        self.phi_k_2 = 26 # [degrees]
+        self.phi_k_1 = 30 # [degrees]
+        self.phi_k_2 = 30 # [degrees]
         self.Df = 1.2 # [m]
         self.gamma_concrete = 25 # [kN/m^3]
         self.q = 10 # [kN/m]
         betta_q = 0 # degrees
         self.betta_q = math.radians(betta_q) # [radians]
         self.H = self.tb + self.h
-        self.sigma_rd = 262  # [kN/m^2]
+        self.sigma_rd = 260  # [kN/m^2]
         # Coefficients of safety
         self.gamma_g = 1.35
         self.gamma_q = 1.5
@@ -72,10 +72,12 @@ class RetainingWall2: # Wide heel
         phi_prime_d_1 = self._phi_prime(self.phi_k_1)
         tg_gamma = math.tan(math.pi / 4 - phi_prime_d_1/2)
         bh = (self.H - self.tb) * tg_gamma
-        return round(bh,2)
+        return round(bh, 2)
 
     def B_final(self):
         bh = self.bh_rankine()
+        if self.b == 0:
+            self.b = self.ts
         b_final = bh + self.b + self.bt
         if b_final < self.B:
             return self.B
@@ -598,6 +600,80 @@ class RetainingWall2: # Wide heel
         as1 = med / (0.9 * (self.ts - 0.05) * 434800)
         a = f"\n-----------\nDimensioning of wall:\nAs1,req,wall = {round(as1 * math.pow(10, 4), 2)} [cm^2]"
         return a
+
+    def mg_wall(self):
+        B = self.B_final()
+        ka1 = self.coefficient_ka(phi=self.phi_k_1)
+        hg1 = self.gamma_k_1 * (
+                    (B - self.bt - self.ts) * math.tan(self.betta_q) + self.hw2 - self.tb) ** 2 * ka1 * math.cos(
+            self.betta_q) / 2
+        if self.hw1 == 0:
+            hg2 = 0
+            hg3 = 0
+            param_hg2 = 0
+            param_hg3 = 0
+            hw = 0
+            param_hw = 0
+        else:
+            hg2 = self.hg2(phi=self.phi_k_1) * (1 - self.tb / self.hw1)
+            hg3 = self.gamma_prime * (self.hw1 - self.tb) ** 2 * ka1 * math.cos(self.betta_q) / 2
+            hw = (self.hw1 - self.tb) ** 2 * 9.807 / 2
+            param_hg2 = (self.hw1 - self.tb) / 2
+            param_hg3 = (self.hw1 - self.tb) / 3
+            param_hw = (self.hw1 - self.tb) / 3
+        if self.b == 0:
+            param_hr = self.ts
+        else:
+            param_hr = self.b
+        mg = (1 * (math.cos(self.betta_q)) * (hg1 * (self.hw1 + (self.hw2 - self.tb) / 3) +
+                                              hg2 * math.cos(self.betta_q) * param_hg2 +
+                                              hg3 * math.cos(self.betta_q) * param_hg3 +
+                                              hw * param_hw) -
+              math.sin(self.betta_q) * (B - self.bt - param_hr / 2) * ((self.hg1(phi=self.phi_k_1)) +
+                                                                       self.hg2(phi=self.phi_k_1) +
+                                                                       self.hg3(phi=self.phi_k_1))
+              )
+        return mg
+
+    def mq_wall(self):
+        mq = self.hq(phi=self.phi_k_1) * (1 - (self.tb / self.total_H())) * (self.total_H() - self.tb) / 2
+        return mq
+
+    def med_wall(self):
+        med_wall = self.gamma_g * self.mg_wall() + self.gamma_q * self.mq_wall()
+        return med_wall
+
+    def as1_req(self):
+        as1_req = self.med_wall()/(0.9 * (self.ts - 0.05) * 434800) * math.pow(10,4)
+        return as1_req
+
+    def param_hg2(self):
+        if self.hw1 == 0:
+            param_hg2 = 0
+        else:
+            param_hg2 = (self.hw1 - self.tb) / 2
+        return param_hg2
+
+    def param_hg3(self):
+        if self.hw1 == 0:
+            param_hg3 = 0
+        else:
+            param_hg3 = (self.hw1 - self.tb) / 3
+        return param_hg3
+
+    def param_hw(self):
+        if self.hw1 == 0:
+            param_hw = 0
+        else:
+            param_hw = (self.hw1 - self.tb) / 3
+        return param_hw
+
+    def param_hr(self):
+        if self.b == 0:
+            param_hr = self.ts
+        else:
+            param_hr = self.b
+        return param_hr
 
     def dimensioning_of_heel(self):
         # TODO zavrsi dimenzionisanje pete temelja
