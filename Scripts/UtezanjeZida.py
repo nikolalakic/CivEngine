@@ -43,6 +43,12 @@ class UtezanjeZida:
         s = s[0]
         self.s = s/100
         self.ni = self.NEd/(self.b * self.h * self.fcd)
+        MEd = self.df['Seizmicki moment Med [kNm]'].to_numpy(dtype=float)
+        self.MEd = MEd[0]
+        MRd = self.df['Moment nosivosti preseka MRd [kNm]'].to_numpy(dtype=float)
+        self.MRd = MRd[0]
+        Hs = self.df['Cista spratna visina Hs [m]'].to_numpy(dtype=float)
+        self.Hs = Hs[0]
 
 
     def kontrola_normalizovane_sile(self):
@@ -72,9 +78,11 @@ class UtezanjeZida:
         koeficijent = self.Armatura()
         Tc = 0.5
         if self.T > Tc:
-            mfi = koeficijent * (2 * self.q0 - 1)
+            mfi = koeficijent * (2 * self.q0 * self.MEd / self.MRd - 1)
         else:
-            mfi = koeficijent * (1 + 2 * (self.q0 - 1))
+            mfi = koeficijent * (2 * (self.q0 * self.MEd/ self.MRd) - 1) * Tc / self.T + 1
+        if self.MRd >= self.MEd * self.q0:
+            mfi = 1
         return mfi
 
     def Alfa_n(self):
@@ -113,7 +121,18 @@ class UtezanjeZida:
             pass
         return lc_mreq
 
+    def Kontrola_minimalne_debljine_utegnutog_elementa(self):
+        if self.h_0 >= max(self.b, 0.2 * self.h):
+            a = f'\nPrema članu 5.4.3.4.2 (10) Evrokoda 8 minimalna debljina utegnutog elementa je: b0,min = Hs/10 = {round(self.Hs/10, 2) * 100} [cm] \n'
+        else:
+            a = f'\nPrema članu 5.4.3.4.2 (10) Evrokoda 8 minimalna debljina utegnutog elementa je: b0,min = Hs/15 = {round(self.Hs/15, 2) * 100} [cm] \n'
+        return a
+
     def Kontrola_postojeceg_utezanja(self):
+        if self.MRd >= self.MEd * self.q0:
+            print('Presek je predimenzionisan, usvojena je minimalna vrednost m\u03D5 = 1\n')
+        else:
+            pass
         xu = (self.ni + self.omega_v) * self.h * self.b/self.b_0
         alfa_omegad_req = self.alfa_omega_dreq()
         lc_mreq = self.Minimalna_Duzina_Utezanja()
@@ -123,33 +142,38 @@ class UtezanjeZida:
         Vco = self.b_0 * self.h_0 * self.s
         Vsw = self.a1_uz * self.obim_uzengija
         omega_d_prov = Vsw * self.fyd/(Vco * self.fcd)
-        if omega_d_prov <= max(0.08, alfa_omegad_req/alfa):
-            print('Nije obezbedjeno dovoljno utezanje ivicnog elementa! \n \n \u03C9wd,prov = ', round(omega_d_prov, 2), '< \u03C9wd,req = ', round(max(0.08, alfa_omegad_req/alfa), 2) )
-            exit()
         epsilon_cu2c_prov = 0.0035 + 0.1 * alfa * omega_d_prov
         lc_req = xu * (1 - 0.0035/epsilon_cu2c_prov)
+        if omega_d_prov <= max(0.08, alfa_omegad_req/alfa):
+            print('Nije obezbeđeno dovoljno utezanje ivičnog elementa! \n \n \u03C9wd,prov = ', round(omega_d_prov, 2), '< \u03C9wd,req = ', round(max(0.08, alfa_omegad_req/alfa), 2) )
+            exit()
         if lc_req >= self.h_0:
-            print("Potrebno je smanjiti stepen utezanja kraja zida ili produziti ivicni element! \n")
-            print('Potrebna duzina utezanja kraja zida: lc_req = ', round(lc_req*100, 1), '[cm]')
-            print('Trenutna duzina utezanja zida: h0 = ', round(self.h_0*100, 1), '[cm]')
-            print('Minimalna potrebna duzina utezanja zida: lc_mreq = ', round(lc_mreq*100,1), '[cm]')
-            print('alfa_s = ', alfa_s)
-            print('alfa_n = ', alfa_n)
-            print('alfa = ', alfa)
-            print('omega_d_prov = ', omega_d_prov)
-            print('alfa_omegad_req = ', alfa_omegad_req)
-            print('omega_d_req = ', alfa_omegad_req/alfa)
+            bo_min = self.Kontrola_minimalne_debljine_utegnutog_elementa()
+            print("Potrebno je smanjiti stepen utezanja kraja zida ili produžiti ivični element!")
+            print(bo_min)
+            print('Potrebna dužina utezanja kraja zida: lc_req = ', round(lc_req*100, 1), '[cm]')
+            print('Trenutna dužina utezanja zida: h0 = ', round(self.h_0*100, 1), '[cm]')
+            print('Minimalna potrebna dužina utezanja zida: lc_mreq = ', round(lc_mreq*100,1), '[cm]')
+            print('alfa_s = ', round(alfa_s,2))
+            print('alfa_n = ', round(alfa_n,2))
+            print('alfa = ', round(alfa,2))
+            print('omega_d_prov = ', round(omega_d_prov,2))
+            print('alfa_omegad_req = ', round(alfa_omegad_req,2))
+            print('omega_d_req = ', round(alfa_omegad_req/alfa,2))
         else:
-            print('Dovoljno utegnut kraj zida! \n')
-            print('\u03BD,Ed = ', self.ni)
-            print('Potrebna duzina utezanja kraja zida: lc_req = ', round(lc_req*100, 1), '[cm]')
-            print('Trenutna duzina utezanja zida: h0 = ', round(self.h_0*100, 1), '[cm]')
-            print('alfa_s = ', alfa_s)
-            print('alfa_n = ', alfa_n)
-            print('alfa = ', alfa)
-            print('omega_d_prov = ', omega_d_prov)
-            print('alfa_omegad_req = ', alfa_omegad_req)
-            print('omega_d_req = ', alfa_omegad_req/alfa)
+            bo_min = self.Kontrola_minimalne_debljine_utegnutog_elementa()
+            print('Dovoljno utegnut kraj zida!')
+            print(bo_min)
+            print('\u03BD,Ed = ', round(self.ni,2))
+            print('Potrebna dužina utezanja kraja zida: lc_req = ', round(lc_req*100, 1), '[cm]')
+            print('Trenutna dužina utezanja zida: h0 = ', round(self.h_0*100, 1), '[cm]')
+            print('alfa_s = ', round(alfa_s,2))
+            print('alfa_n = ', round(alfa_n,2))
+            print('alfa = ', round(alfa,2))
+            print('omega_d_prov = ', round(omega_d_prov,2))
+            print('alfa_omegad_req = ', round(alfa_omegad_req,2))
+            print('omega_d_req = ', round(alfa_omegad_req/alfa,2))
+
 
 def SeizmikaPodaci():
     # os.chdir('BetonskeKonstrukcije')
@@ -162,7 +186,7 @@ def SeizmikaPodaci():
             print('Fajl SeizmikaPodaci.xlsx se nalazi u folderu. \n -------------------------')
             klasa = UtezanjeZida()
     except IndexError:
-        print('Svaka kolona mora biti popunjena sa odgovarajucim podacima da bi skripta radila.')
+        print('Svaka kolona mora biti popunjena sa odgovarajućim podacima da bi skripta radila.')
         exit()
     return klasa
 
