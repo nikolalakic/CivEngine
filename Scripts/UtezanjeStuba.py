@@ -37,6 +37,12 @@ class UtezanjeStuba:
         self.tip_armature = tip_armature.upper()
         T = df['Period oscilovanja T [s]'].to_numpy(dtype=float)
         self.T = T[0]
+        MEd = self.df['Seizmicki moment Med [kNm]'].to_numpy(dtype=float)
+        self.MEd = MEd[0]
+        MRd = self.df['Moment nosivosti preseka MRd [kNm]'].to_numpy(dtype=float)
+        self.MRd = MRd[0]
+        Hs = self.df['Cista spratna visina Hs [m]'].to_numpy(dtype=float)
+        self.Hs = Hs[0]
         
     def Armatura(self):
         if self.tip_armature == 'B500B':
@@ -48,18 +54,23 @@ class UtezanjeStuba:
                   'unesi jednu od dve vrednosti u odgovarajucu kolonu tabele.')
             exit()
         return koeficijent
-       
+
     def Mfi(self):
         koeficijent = self.Armatura()
-        Tc = 0.4
+        Tc = 0.5
         if self.T > Tc:
-            mfi = koeficijent * (2 * self.q0 - 1)
-            print('Normalizovana sila \u03BD,Ed = ', self.nied,  '<= 0.65   OK!')
+            mfi = koeficijent * (2 * self.q0 * self.MEd / self.MRd - 1)
         else:
-            mfi = koeficijent * (1 + 2 * (self.q0 - 1))
+            mfi = koeficijent * (2 * (self.q0 * self.MEd / self.MRd) - 1) * Tc / self.T + 1
+        if self.MRd >= self.MEd * self.q0:
+            mfi = 1
         return mfi
 
     def Utezanje(self):
+        if self.MRd >= self.MEd * self.q0:
+            print('Presek je predimenzionisan, usvojena je minimalna vrednost m\u03D5 = 1\n')
+        else:
+            pass
         if self.nied > 0.65:
             print('Normalizovana sila \u03BD,Ed je veca od 0.65! Povecaj marku betona ili dimenzije stuba!')
             print(f'\u03BD,Ed = {self.nied} >= 0.65 = \u03BD,Ed,max!')
@@ -68,6 +79,7 @@ class UtezanjeStuba:
             print('\nPrimenjuju se pravila iz EC2!')
             exit()
         else:
+            print(f'\u03BD,Ed = {round(self.nied,2)} <= 0.65')
             mfi = self.Mfi()
             bi_niz = self.df['Razmak pridrzanih sipki bi [cm]'].to_numpy(dtype=float)
             bi_niz = bi_niz/100
@@ -92,12 +104,12 @@ class UtezanjeStuba:
                         print("\n\u03C6 =", round(precnik, 0), 'na s =', p*100, '[cm]' + ' ne zadovoljava!')
                         if x == 1.13*math.pow(10, -4) and p == 7.5/100:
                             print('\n>>>>>Nedovoljno utezanje stuba!')
-            print('omegawdprov = ', omegawdprov)
-            print('omegawdreq = ', omegawdreq)
-            print('alfa_s = ', alfas)
-            print('alfa_n = ', alfan)
-            print('alfa = ', alfa)
-            print('alfa_omega = ', alfa_omegawdreq)
+            print('\u03C9_wd_prov = ', omegawdprov)
+            print('\u03C9_wd_req = ', omegawdreq)
+            print('\u03B1_s = ', alfas)
+            print('\u03B1_n = ', alfan)
+            print('\u03B1 = ', alfa)
+            print('\u03B1_\u03C9 = ', alfa_omegawdreq)
 
 
 def seizmikapodaci():
