@@ -241,7 +241,7 @@ class DijagramInterakcije:
         plt.plot([], [],
                  label=f'As1 = {self.k} * As = {self.k} * \u03C9 * b * h * fcd / fyd', linestyle='-', color='black', linewidth=2, marker='>', markersize=10)
         plt.plot([], [],
-                 label=f'As2 = {1 - self.k} * As = = {1 - self.k} * \u03C9 * b * h * fcd / fyd', linestyle='-', color='black', linewidth=2, marker='>', markersize=10)
+                 label=f'As2 = {1 - self.k} * As = {1 - self.k} * \u03C9 * b * h * fcd / fyd', linestyle='-', color='black', linewidth=2, marker='>', markersize=10)
         plt.plot([], [],
                  label=f'fck = {self.fck} MPa', linestyle='-', color='black', linewidth=2, marker='*', markersize=10)
         plt.plot([], [],
