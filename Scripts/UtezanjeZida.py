@@ -61,7 +61,6 @@ class UtezanjeZida:
             exit()
         else:
             print(f'Potrebno je utezanje krajeva zida za zid {self.naziv_zida} \n')
-            lcmin = self.Minimalna_Duzina_Utezanja()
 
     def Armatura(self):
         if self.tip_armature == 'B500B':
@@ -110,7 +109,6 @@ class UtezanjeZida:
         return alfa_omegad_dreq
 
     def Minimalna_Duzina_Utezanja(self):
-        mfi = self.Mfi()
         alfa_omegad_req = self.alfa_omega_dreq()
         xu = (self.ni + self.omega_v) * self.h * self.b/self.b_0
         epsilon_cu2_c = 0.0035 + 0.1 * alfa_omegad_req
@@ -167,6 +165,7 @@ class UtezanjeZida:
             print('\u03BD,Ed = ', round(self.ni,2))
             print('Potrebna dužina utezanja kraja zida: lc_req = ', round(lc_req*100, 1), '[cm]')
             print('Trenutna dužina utezanja zida: h0 = ', round(self.h_0*100, 1), '[cm]')
+            print('Minimalna potrebna dužina utezanja zida: lc_mreq = ', round(lc_mreq * 100, 1), '[cm]')
             print('alfa_s = ', round(alfa_s,2))
             print('alfa_n = ', round(alfa_n,2))
             print('alfa = ', round(alfa,2))
