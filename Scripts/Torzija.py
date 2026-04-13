@@ -1,8 +1,8 @@
 import math
-from Karakteristike_preseka import BetonIArmatura
+from Karakteristike_preseka import Karakteristike_betona_i_armature
 
 
-class Torzija(BetonIArmatura):
+class Torzija(Karakteristike_betona_i_armature):
     def __init__(self):
         super().__init__()
         self.TEd = abs(float(input('Unesi silu torzije TEd [kNm]: ')))
