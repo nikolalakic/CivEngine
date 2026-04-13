@@ -9,16 +9,8 @@ class SpregnutiPresek:
         profil = input(
             'Unesi traženi profil (IPE,HEA,HEB,UPN) ili stisni enter za ručni unos: '
         ).strip().upper()
-        self.kc = KarakteristikeCelicnogPreseka(profil)
-
         fya_input = float(input('Unesi kvalitet čelika [MPa]: '))
-        self.fya = fya_input * 1000  # [KPa]
-        self.fck = self.kb.fck * 1000 # [KPa]
-        self.MEd = float(input('Unesi dejstujući moment savijanja MEd [KNm]: '))
-        self.VEd = float(input('Unesi dejstvujuću smičuću silu VEd [KN]: '))
-        self.beff = self.kc.beff
-        self.hfl = self.kc.hfl
-        self.polozaj = self.polozaj_momenta()
+        self.kc = KarakteristikeCelicnogPreseka(profil)
         self.Aa = self.kc.povrsina_preseka
         self.ha = self.kc.ha
         self.bf1 = self.kc.bf1
@@ -26,6 +18,13 @@ class SpregnutiPresek:
         self.tw = self.kc.tw
         self.tf1 = self.kc.tf1
         self.tf2 = self.kc.tf2
+        self.fya = fya_input * 1000  # [KPa]
+        self.fck = self.kb.fck * 1000 # [KPa]
+        self.beff = self.kc.beff
+        self.hfl = self.kc.hfl
+        self.MEd = float(input('Unesi dejstujući moment savijanja MEd [KNm]: '))
+        self.VEd = float(input('Unesi dejstvujuću smičuću silu VEd [KN]: '))
+        self.polozaj = self.polozaj_momenta()
         self.gamma_v = 1.25
 
     @staticmethod
