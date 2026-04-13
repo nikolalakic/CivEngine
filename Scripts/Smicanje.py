@@ -1,8 +1,8 @@
 import math
-from Karakteristike_preseka import BetonIArmatura
+from Karakteristike_preseka import Karakteristike_betona_i_armature
 
 
-class Smicanje(BetonIArmatura):
+class Smicanje(Karakteristike_betona_i_armature):
     def __init__(self):
         super().__init__()
         self.VEd = abs(float(input('Unesi silu smicanja VEd [kN]: ')))
