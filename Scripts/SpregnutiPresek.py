@@ -59,7 +59,7 @@ class SpregnutiPresek:
         return Mpl
 
     def Vpl_Rd(self):
-        Avz = self.karakteristike_celika.povrsina_smicanja
+        Avz = self.kc.povrsina_smicanja
         return Avz * self.fya / math.sqrt(3)  # [kN]
     def interakcija_smicanja_i_savijanja(self):
         current_Mpl = self.Mpl_Rd()
