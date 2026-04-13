@@ -111,5 +111,5 @@ class SpregnutiPresek:
 
 obj = SpregnutiPresek()
 final_M = obj.interakcija_smicanja_i_savijanja()
-print(f'Plastični moment nosivosti (redukovan): {round(final_M, 2)} [kNm]')
-print(f'Potreban broj moždanika: n = {round(obj.proracun_mozdanika(), 2)}')
+print(f'\nPlastični moment nosivosti (redukovan): {round(final_M, 2)} [kNm]')
+print(f'\nPotreban broj moždanika: n = {round(obj.proracun_mozdanika(), 2)}')
