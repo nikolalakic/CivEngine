@@ -139,6 +139,7 @@ class KarakteristikeBetonaIArmature:
 
 class KarakteristikeCelicnogPreseka:
     def __init__(self, profil=None):
+        self._profil = profil
         self._bf1 = None
         self._bf2 = None
         self._tw = None
@@ -150,7 +151,7 @@ class KarakteristikeCelicnogPreseka:
         self._hfl = None
         self._ha = None
         self._povrsina_smicanja = None
-        self._profil = profil
+
 
     @staticmethod
     def dataframe():
