@@ -1,12 +1,12 @@
 import math
-from Karakteristike_preseka import Karakteristike_betona_i_armature
+from Karakteristike_preseka import KarakteristikeBetonaIArmature
 
 
-class Smicanje(Karakteristike_betona_i_armature):
+class Smicanje(KarakteristikeBetonaIArmature):
     def __init__(self):
         super().__init__()
         self.VEd = abs(float(input('Unesi silu smicanja VEd [kN]: ')))
-        self.mv = self.secnost()
+        self.mv = self.secnost
         self.VRd_c = self.minimalna_nosivost_betona_na_smicanje()
 
     def izabrana_povrsina_armature_za_smicanje(self):  # uzeti su samo fi 8, 10, i 12 u obzir

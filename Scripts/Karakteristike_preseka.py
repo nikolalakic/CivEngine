@@ -5,7 +5,6 @@ import os
 
 class KarakteristikeBetonaIArmature:
     def __init__(self):
-        # Internal storage initialized as None to track if user has been asked
         self._fck = None
         self._b = None
         self._h = None
@@ -20,6 +19,8 @@ class KarakteristikeBetonaIArmature:
         self.cot_teta = 1  # teta = 45 deg
         self.sin_alfa_cw = 1  # alfa = 90 deg
         self.cot_alfa = 0
+        self._secnost=None
+        self._asl = None
 
     def _get_df(self):
         if self._df is None:
@@ -30,7 +31,6 @@ class KarakteristikeBetonaIArmature:
         return self._df
 
     def _get_row_index(self):
-        """Finds the row index for the current fck."""
         df = self._get_df()
         fck_lista = df['fck [Mpa]'].to_list()
         if self.fck in fck_lista:
@@ -52,20 +52,26 @@ class KarakteristikeBetonaIArmature:
     @property
     def b(self):
         if self._b is None:
-            self._b = float(input('Unesi širinu preseka b [cm]: ')) / 100
+            self._b = float(input('Unesi širinu preseka b [cm]: ')) / 100 # [m]
         return self._b
 
     @property
     def h(self):
         if self._h is None:
-            self._h = float(input('Unesi visinu preseka h [cm]: ')) / 100
+            self._h = float(input('Unesi visinu preseka h [cm]: ')) / 100 # [m]
         return self._h
 
     @property
     def d1(self):
         if self._d1 is None:
-            self._d1 = float(input('Unesi rastojanje d1 [cm]: ')) / 100
+            self._d1 = float(input('Unesi rastojanje d1 [cm]: ')) / 100 # [m]
         return self._d1
+
+    @property
+    def secnost(self):
+        if self._secnost is None:
+            self._secnost = float(input('Unesi sečnost preseka m: '))
+        return self._secnost
 
     @property
     def d(self):
@@ -82,6 +88,11 @@ class KarakteristikeBetonaIArmature:
     @property
     def ni_1(self):
         return 0.6 * (1 - self.fck / 250)
+    @property
+    def asl(self):
+        if self._asl is None:
+            self_asl = float(input('Unesi površinu podužne armature Asl [cm^2]: ')) / 10000 # [m^2]
+            return self_asl
 
     def fcd(self):
         return self.alfa_cc * self.fck / self.gama_c
@@ -123,11 +134,10 @@ class KarakteristikeBetonaIArmature:
         # teta = 45 -> sin*cos = 0.5
         return 2 * self.Ak() * 1.0 * self.ni_1 * self.fcd() * self.t_eff() * 0.5 * 1000
 
-    def minimalna_nosivost_betona_na_smicanje(self, Asl_cm2):
-        Asl = Asl_cm2 / 10000
+    def minimalna_nosivost_betona_na_smicanje(self):
+        Asl = self.asl
         k = min(1 + math.sqrt(200 / (self.d * 1000)), 2.0)
         ro_1 = min(Asl / (self.b * self.d), 0.02)
-
         VRd_c1 = (0.18 / self.gama_c * k * (100 * ro_1 * self.fck) ** (1 / 3)) * self.b * self.d * 1000
         Vmin = 0.035 * k ** 1.5 * self.fck ** 0.5 * self.b * self.d * 1000
         return max(VRd_c1, Vmin)
