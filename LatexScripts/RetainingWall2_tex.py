@@ -105,6 +105,8 @@ class RetainingWall2Tex(RetainingWall2):
             'mq_wall': f'{round(self.mq_wall(), 2)}',
             'med_wall': f'{round(self.med_wall(), 2)}',
             'as1_req': f'{round(self.as1_req(), 2)}',
+            'cohesion': f'{round(self.cohesion, 2)}',
+            'coefficient_ca': f'{round(self.coefficient_cohesion, 3)}'
         }
 
     def tex_file_path(self):

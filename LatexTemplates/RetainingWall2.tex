@@ -104,6 +104,8 @@ $\beta_{q}$ & $betta_q$ & $\circ$\\
 \hline
 $\alpha_{c}$ & $alpha_c$ & $\circ$\\
 \hline
+$c_{a}$ & $cohesion$ & $kPa$\\
+\hline
 \end{tabular}
 \caption{Geometrijiski parametri potpornog zida}
 \label{tab:geometrijiski_parametri}
@@ -591,7 +593,7 @@ med_dstb &\leq med_stb \quad \left( overturning_stability_check \right)
 V_{g} &= \gamma_{g,fav} \cdot \left( \sum_{i=1} ^ 3 G_{ci} + \sum_{i=1} ^ 6  G_{si} + W_{2} \right) - W_{2} \cdot \gamma_{g} \\
 V_{q} &= \gamma_{q} \cdot V_{q} \\
 V_{d} &= V_{g} + V_{q} \\
-H_{Rd} &= \frac{V_{d} \cdot \tan(\phi'_2)}{\gamma_{r,h}} \\
+H_{Rd} &= \frac{V_{d} \cdot \tan(\phi'_2)}{\gamma_{r,h}} + c_{a, coefficient} \frac{ B \cdot c_{a}}{\gamma_{r,h}} \\
 H_{d} &= \gamma_g \cdot \left( H_{g1} \cdot \cos(\beta_{q}) + H_{g2} \cdot \cos(\beta_{q}) + H_{g3} \cdot \cos(\beta_{q}) + H_{w} \right) + \\
     &\quad \gamma_{q} \cdot H_{q} \cdot \cos(\beta_{q})
 \end{align*}
@@ -600,7 +602,7 @@ H_{d} &= \gamma_g \cdot \left( H_{g1} \cdot \cos(\beta_{q}) + H_{g2} \cdot \cos(
 V_g &= gamma_gfav \cdot \left( gc1+gc2+gc3+gs1+gs2+gs3+gs4+gs5+gs6 + w_2 \right) - w_2 \cdot gammag = vg_slide \text{ } [kN/m] \\
 V_q &= gammaq \cdot v_qu = vq_slide \text{ } [kN/m] \\
 V_d &= vg_slide + vq_slide = vd_slide \text{ } [kN/m] \\
-H_{Rd} &= \frac{vd_slide \cdot \tan(phi_prime_stab_2)}{gamma_rh} = hrd_slide \text{ } [kN/m] \\
+H_{Rd} &= \frac{vd_slide \cdot \tan(phi_prime_stab_2)}{gamma_rh} + coefficient_ca \cdot \frac{B_final \cdot cohesion}{gamma_rh} = hrd_slide \text{ } [kN/m] \\
 H_d &= gammag \cdot \left( h_g1 \cdot \cos(betta_q) + h_g2 \cdot \cos(betta_q) + h_g3 \cdot \cos(betta_q) \right) + \\
     &\quad gammag \cdot h_w + gammaq \cdot hqq \cdot \cos(betta_q) = hd_slide \text{ } [kN/m]
 \end{align*}

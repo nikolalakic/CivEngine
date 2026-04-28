@@ -2,13 +2,13 @@ import math
 
 class RetainingWall2: # Wide heel
     def __init__(self):
-        self.hw1 = 1.5 # [m]
-        self.ts = 0.7 # [m]
-        self.tb = 0.7 # [m]
-        self.B = 5 # [m] appr. (0.5-0.7)*H
+        self.hw1 = 0 # [m]
+        self.ts = 0.25 # [m]
+        self.tb = 0.4 # [m]
+        self.B = 2.4  # [m] appr. (0.5-0.7)*H
         self.b = 0 # [m]
-        self.bt = 0.9 # [m]
-        self.h = 6 # [m]
+        self.bt = 0.4 # [m]
+        self.h = 2.5 # [m]
         self.H = self.h + self.tb # [m]
         self.gamma_k_1 = 20 # [kN/m^3]
         self.gamma_k_2 = 20  # [kN/m^3]
@@ -24,11 +24,13 @@ class RetainingWall2: # Wide heel
             self.alpha_c = math.atan((self.b - self.ts) / self.h) # [radians]
         else:
             self.alpha_c = 0
-        self.phi_k_1 = 30 # [degrees]
-        self.phi_k_2 = 30 # [degrees]
-        self.Df = 1.2 # [m]
+        self.phi_k_1 = 20 # [degrees]
+        self.phi_k_2 = 20 # [degrees]
+        self.cohesion= 15 # [kPa]
+        self.coefficient_cohesion = 2 / 3 # for slide check
+        self.Df = 0.8 # [m]
         self.gamma_concrete = 25 # [kN/m^3]
-        self.q = 10 # [kN/m]
+        self.q = 3 # [kN/m]
         betta_q = 0 # degrees
         self.betta_q = math.radians(betta_q) # [radians]
         self.H = self.tb + self.h
@@ -521,7 +523,7 @@ class RetainingWall2: # Wide heel
         vg = self.gamma_g_fav * (self.sum_of_vertical_forces_g() + self.w2()) - self.w2() * self.gamma_g
         vq =  self.gamma_q * self.vq()
         vd = vg + vq
-        hrd = (vd * math.tan(self._phi_prime(phi=self.phi_k_2))) / self.gamma_r_h
+        hrd = (vd * math.tan(self._phi_prime(phi=self.phi_k_2))) / self.gamma_r_h + self.coefficient_cohesion * self.cohesion * self.B_final() / self.gamma_r_h
         hd = (self.gamma_g * (self.hg1(phi=self.phi_k_1) * math.cos(self.betta_q) + self.hg2(phi=self.phi_k_1) * math.cos(self.betta_q) +
               self.hg3(phi=self.phi_k_1) * math.cos(self.betta_q) + self.hw()) +
               self.gamma_q * self.hq(phi=self.phi_k_1) * math.cos(self.betta_q))
@@ -545,7 +547,7 @@ class RetainingWall2: # Wide heel
 
     def hrd_slide(self):
         vd = self.vg_slide() + self.vq_slide()
-        hrd_slide = (vd * math.tan(self._phi_prime(phi=self.phi_k_2))) / self.gamma_r_h
+        hrd_slide = (vd * math.tan(self._phi_prime(phi=self.phi_k_2))) / self.gamma_r_h + self.coefficient_cohesion * self.cohesion * self.B_final() / self.gamma_r_h
         return hrd_slide
 
     def hd_slide(self):
