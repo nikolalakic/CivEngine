@@ -10,7 +10,6 @@ class DijagramInterakcije:
         self.k = self.k/100
         self.fcd = 0.85 * self.fck / 1.5  # [MPa]
         self.b = float(input('Unesi sirinu preseka b [cm]: '))
-        self.b = 30
         self.b = self.b / 100
         self.h = float(input('Unesi visinu preseka h [cm]: '))
         self.h = self.h / 100
@@ -34,7 +33,7 @@ class DijagramInterakcije:
     @staticmethod
     def beta2_koeficijent(epsilon_c2):
         epsilon_c2 = epsilon_c2 * 1000  # [Formula radi za promile]
-        if 3.5 <= epsilon_c2 <= 3.5:
+        if 2 <= epsilon_c2 <= 3.5:
             beta2 = (epsilon_c2 * (3 * epsilon_c2 - 4) + 2) / (2 * epsilon_c2 * (3 * epsilon_c2 - 2))
         elif 0 <= epsilon_c2 < 2:
             beta2 = (8 - epsilon_c2) / (4 * (6 - epsilon_c2))
