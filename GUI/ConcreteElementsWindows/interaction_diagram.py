@@ -325,28 +325,28 @@ class Window(QWidget):
 
         # Unošenje imena, polja i opisa za promenljive
         self.fck_label = QLabel("fck [MPa]:")
-        self.fck_input = QLineEdit("25")
+        self.fck_input = QLineEdit()
 
         self.k_label = QLabel('k [%]:')
-        self.k_input = QLineEdit("50")
+        self.k_input = QLineEdit()
 
         self.b_label = QLabel('b [cm]:')
-        self.b_input = QLineEdit("25")
+        self.b_input = QLineEdit()
 
         self.h_label = QLabel('h [cm]:')
-        self.h_input = QLineEdit("250")
+        self.h_input = QLineEdit()
 
         self.d1_label = QLabel('d1 [cm]:')
-        self.d1_input = QLineEdit("25")
+        self.d1_input = QLineEdit()
 
         self.d2_label = QLabel('d2 [cm]:')
-        self.d2_input = QLineEdit("25")
+        self.d2_input = QLineEdit()
 
         self.MEd_label = QLabel('MEd [kNm]:')
-        self.MEd_input = QLineEdit("2000")
+        self.MEd_input = QLineEdit()
 
         self.NEd_label = QLabel('NEd [kN]:')
-        self.NEd_input = QLineEdit("1200")
+        self.NEd_input = QLineEdit()
 
         # Definisanje ikonica sa tooltipovima
         self.fck_help = QLabel("❓")
