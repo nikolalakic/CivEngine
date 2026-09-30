@@ -317,6 +317,19 @@ class Window(QWidget):
         self.setWindowTitle("Dijagram interakcije")
         self.resize(900, 600)
 
+        # Layout koji sadrži glavni kao i layout za naslov
+        main_layout = QVBoxLayout()
+
+        # Layout za naslov (ispravno kreiran i popunjen na početku)
+        self.naslov_layout = QHBoxLayout()
+        self.naslov_label = QLabel('Dijagram interakcije')
+
+        self.naslov_label.setStyleSheet("font-size: 20px; font-weight: bold;")
+        self.naslov_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.naslov_layout.addWidget(self.naslov_label)
+        main_layout.addLayout(self.naslov_layout)
+
         # Glavni layout je horizontalan: [Unos podataka] | [Slika]
         self.glavni_layout = QHBoxLayout()
 
@@ -353,7 +366,7 @@ class Window(QWidget):
         self.fck_help.setToolTip("Karakteristična čvrstoća betona na pritisak u [MPa].")
 
         self.k_help = QLabel("❓")
-        self.k_help.setToolTip("Procenat površine zategnute armature u odnosu na pritisnutu armaturu u [%].")
+        self.k_help.setToolTip("Procenat površine zategnute armature u odnosu na ukupnu armaturu u [%].")
 
         self.b_help = QLabel("❓")
         self.b_help.setToolTip("Širina poprečnog preseka u [cm].")
@@ -428,14 +441,14 @@ class Window(QWidget):
         self.slika_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.slika_label.setStyleSheet(
             "border: 2px dashed #aaa; background-color: palette(window); color: #555; border-radius: 8px;")
-        self.slika_label.setMinimumSize(500, 550)
+        self.slika_label.setMinimumSize(450, 500)
         putanja_slike = os.path.join("Graphics", "interaction_diagram.png")
 
         if os.path.exists(putanja_slike):
             pixmap = QPixmap(putanja_slike)
             # Skaliranje slike da lepo stane u prozor uz očuvanje srazmere
             self.slika_label.setPixmap(
-                pixmap.scaled(500, 550, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                pixmap.scaled(440, 490, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         else:
             self.slika_label.setText(f"Slika nije pronađena!\nOčekivana putanja:\n{putanja_slike}")
             self.slika_label.setStyleSheet(
@@ -447,7 +460,9 @@ class Window(QWidget):
         self.glavni_layout.addLayout(self.ulazni_podaci_layout)
         self.glavni_layout.addLayout(self.slika_layout)
 
-        self.setLayout(self.glavni_layout)
+        main_layout.addLayout(self.glavni_layout)
+
+        self.setLayout(main_layout)
         self.plot_window = None
 
     def pokreni_proracun(self):
