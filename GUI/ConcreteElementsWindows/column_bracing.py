@@ -29,7 +29,7 @@ class UtezanjeStuba:
         self.h = float(params.get('h', 0)) / 100
         self.h0 = self.h - 0.08
 
-        fck_val = int(params.get('fck', 30))
+        fck_val = int(params.get('fck', 0))
         self.fck = fck_val * 1000
         self.fcd = 0.85 * self.fck / 1.5
         self.fyd = 500 / 1.15 * 1000
@@ -37,14 +37,14 @@ class UtezanjeStuba:
         self.nied = self.NEd / (self.b * self.h * self.fcd)
         self.b0 = self.b - 0.08
 
-        self.q0 = float(params.get('q0', 1.5))
+        self.q0 = float(params.get('q0', 0))
         self.Tc = 0.5
-        self.ObimUzg = float(params.get('ObimUzg', 1.0)) / 100
+        self.ObimUzg = float(params.get('ObimUzg', 0)) / 100
         self.tip_armature = str(params.get('tip_armature', 'B500B')).upper()
-        self.T = float(params.get('T', 0.1))
-        self.MEd = float(params.get('MEd', 1))
-        self.MRd = float(params.get('MRd', 1))
-        self.Hs = float(params.get('Hs', 3.0))
+        self.T = float(params.get('T', 0))
+        self.MEd = float(params.get('MEd', 0))
+        self.MRd = float(params.get('MRd', 0))
+        self.Hs = float(params.get('Hs', 0))
 
         self.bi_niz = np.array(bi_niz, dtype=float) / 100
 
@@ -129,7 +129,7 @@ class UtezanjeStuba:
                     alfa_omegawdreq = current_alfa_omegawdreq
 
             if not uspeh:
-                rezultati_log.append('>>>>> Nedovoljno utezanje stuba za izabrani prečnik!')
+                rezultati_log.append('>>> Nedovoljno utezanje stuba za izabrani prečnik!')
 
             rezultati_log.append(f'ω_wd_prov = {omegawdprov:.4f}')
             rezultati_log.append(f'ω_wd_req = {omegawdreq:.4f}')
@@ -184,12 +184,13 @@ class Window(QWidget):
         # ----------------------------------------------------
         self.ulazni_podaci_layout = QFormLayout()
 
-        self.NEd_input = QLineEdit("2266.63")
-        self.b_input = QLineEdit("50")
-        self.h_input = QLineEdit("50")
-        self.fck_input = QLineEdit("30")
-        self.q0_input = QLineEdit("3.9")
-        self.ObimUzg_input = QLineEdit("286.8")
+        self.ime_stuba_input = QLineEdit("Stub S1")
+        self.NEd_input = QLineEdit("")
+        self.b_input = QLineEdit("")
+        self.h_input = QLineEdit("")
+        self.fck_input = QLineEdit("")
+        self.q0_input = QLineEdit("")
+        self.ObimUzg_input = QLineEdit("")
 
         # Dropdown za izbor tipa armature
         self.tip_armature_combo = QComboBox()
@@ -199,11 +200,13 @@ class Window(QWidget):
         self.precnik_combo = QComboBox()
         self.precnik_combo.addItems(["φ 8", "φ 10", "φ 12"])
 
-        self.T_input = QLineEdit("0.668")
+        self.T_input = QLineEdit("")
         self.MEd_input = QLineEdit("1")
         self.MRd_input = QLineEdit("1")
         self.Hs_input = QLineEdit("3.0")
 
+
+        self.ulazni_podaci_layout.addRow("Ime stuba:", self.ime_stuba_input)
         self.ulazni_podaci_layout.addRow("Normalna sila NEd [kN]:", self.NEd_input)
         self.ulazni_podaci_layout.addRow("Širina b [cm]:", self.b_input)
         self.ulazni_podaci_layout.addRow("Visina h [cm]:", self.h_input)
@@ -261,7 +264,7 @@ class Window(QWidget):
 
 
     ## TODO odradi grafiku za utezanje
-        putanja_slike = os.path.join("Graphics", "interaction_diagram.png")
+        putanja_slike = os.path.join("Graphics", "column_bracing.png")
         if os.path.exists(putanja_slike):
             pixmap = QPixmap(putanja_slike)
             self.slika_label.setPixmap(
