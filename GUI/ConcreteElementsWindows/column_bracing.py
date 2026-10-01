@@ -262,8 +262,6 @@ class Window(QWidget):
             "border: 2px dashed #aaa; background-color: palette(window); color: #555; border-radius: 8px;")
         self.slika_label.setMinimumSize(400, 500)
 
-
-    ## TODO odradi grafiku za utezanje
         putanja_slike = os.path.join("Graphics", "column_bracing.png")
         if os.path.exists(putanja_slike):
             pixmap = QPixmap(putanja_slike)
