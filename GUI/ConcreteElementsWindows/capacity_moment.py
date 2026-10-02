@@ -242,14 +242,14 @@ class Window(QWidget):
         self.tip_presek_combo.currentIndexChanged.connect(self.promeni_tip_preseka)
 
         # Polja za unos
-        self.fck_input = QLineEdit("40")
-        self.Ned_input = QLineEdit("325")
-        self.b_input = QLineEdit("25")
-        self.d_input = QLineEdit("42.25")
-        self.d1_input = QLineEdit("7.75")
-        self.As1_input = QLineEdit("29.45")
-        self.As2_input = QLineEdit("29.45")
-        self.d2_input = QLineEdit("7.75")
+        self.fck_input = QLineEdit()
+        self.Ned_input = QLineEdit()
+        self.b_input = QLineEdit()
+        self.d_input = QLineEdit()
+        self.d1_input = QLineEdit()
+        self.As1_input = QLineEdit()
+        self.As2_input = QLineEdit()
+        self.d2_input = QLineEdit()
 
         # Specifična polja za T-presek
         self.hfl_input = QLineEdit()

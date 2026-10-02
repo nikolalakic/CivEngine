@@ -218,14 +218,14 @@ class Window(QWidget):
         self.ulazni_podaci_layout = QFormLayout()
 
         self.naziv_zida_input = QLineEdit("Z1")
-        self.NEd_input = QLineEdit("")
-        self.b_input = QLineEdit("")
-        self.h_input = QLineEdit("")
-        self.fck_input = QLineEdit("")
-        self.q0_input = QLineEdit("")
-        self.h0_input = QLineEdit("")
-        self.obim_uzengija_input = QLineEdit("")
-        self.s_input = QLineEdit("10.0")
+        self.NEd_input = QLineEdit()
+        self.b_input = QLineEdit()
+        self.h_input = QLineEdit()
+        self.fck_input = QLineEdit()
+        self.q0_input = QLineEdit()
+        self.h0_input = QLineEdit()
+        self.obim_uzengija_input = QLineEdit()
+        self.s_input = QLineEdit("20.0")
 
         # Dropdown za izbor tipa armature
         self.tip_armature_combo = QComboBox()
@@ -235,7 +235,7 @@ class Window(QWidget):
         self.precnik_combo = QComboBox()
         self.precnik_combo.addItems(["φ 8", "φ 10", "φ 12", "φ 14"])
 
-        self.T_input = QLineEdit("")
+        self.T_input = QLineEdit()
         self.MEd_input = QLineEdit("1")
         self.MRd_input = QLineEdit("1")
         self.Hs_input = QLineEdit("3.0")
