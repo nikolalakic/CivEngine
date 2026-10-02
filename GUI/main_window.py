@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame
-from GUI.ConcreteElementsWindows import column_bracing, interaction_diagram, wall_bracing
+from GUI.ConcreteElementsWindows import column_bracing, interaction_diagram, wall_bracing, capacity_moment
 
 
 class MainWindow(QWidget):
@@ -49,6 +49,7 @@ class MainWindow(QWidget):
         self.beton_button1 = QPushButton('Dijagram interakcije')
         self.beton_button2 = QPushButton('Utezanje stuba')
         self.beton_button3 = QPushButton('Utezanje zida')
+        self.beton_button4 = QPushButton('Moment nosivosti preseka')
         self.celik_button1 = QPushButton('todo')
 
         # Stilovi dugmića i teksta
@@ -73,6 +74,7 @@ class MainWindow(QWidget):
         self.beton_button1.setStyleSheet(stil_dugmica)
         self.beton_button2.setStyleSheet(stil_dugmica)
         self.beton_button3.setStyleSheet(stil_dugmica)
+        self.beton_button4.setStyleSheet(stil_dugmica)
         self.celik_button1.setStyleSheet(stil_dugmica)
 
         self.beton_naslov.setStyleSheet(stil_naslova)
@@ -83,6 +85,7 @@ class MainWindow(QWidget):
         self.beton_layout.addWidget(self.beton_button1)
         self.beton_layout.addWidget(self.beton_button2)
         self.beton_layout.addWidget(self.beton_button3)
+        self.beton_layout.addWidget(self.beton_button4)
         self.celik_layout.addWidget(self.celik_naslov)
         self.celik_layout.addWidget(self.celik_button1)
         self.glavni_layout.addLayout(self.beton_layout)
@@ -102,6 +105,9 @@ class MainWindow(QWidget):
         self.beton_button3.setCheckable(True)
         self.beton_button3.clicked.connect(self.wall_bracing_button_click)
 
+        self.beton_button4.setCheckable(True)
+        self.beton_button4.clicked.connect(self.capacity_moment_button_click)
+
     def interaction_diagram_button_click(self):
         self.interaction_diagram_window = interaction_diagram.Window()
         self.interaction_diagram_window.show()
@@ -113,6 +119,10 @@ class MainWindow(QWidget):
     def wall_bracing_button_click(self):
         self.wall_bracing_window = wall_bracing.Window()
         self.wall_bracing_window.show()
+
+    def capacity_moment_button_click(self):
+        self.capacity_moment_window = capacity_moment.Window()
+        self.capacity_moment_window.show()
 
 
 
