@@ -78,7 +78,7 @@ class NosivostModel:
         Fc2 = beta12 * (iks - self.hfl) * self.fcd * math.pow(10, 3) * (self.beff - self.bw)
         deltaN = Fc1 - Fc2 - Fs1 - self.Ned
 
-        while abs(deltaN) > 5:
+        while abs(deltaN) > 1:
             ec = 3.5
             ecf = ec * (iks - self.hfl) / iks
             beta11 = (3 * 3.5 - 2) / (3 * ec)
