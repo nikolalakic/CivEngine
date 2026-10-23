@@ -111,13 +111,13 @@ class RetainingWall2Tex(RetainingWall2):
 
     def tex_file_path(self):
         os.chdir("../LatexTemplates")
-        filepath = str(os.getcwd()) +  r'\RetainingWall2.tex'
+        filepath = str(os.getcwd()) +  r'/RetainingWall2.tex'
         return filepath
 
     def consume_file(self):
         file = self.tex_file_path()
         src = file
-        dst = os.path.dirname(os.path.abspath(file)) + r'\obrada.tex'
+        dst = os.path.dirname(os.path.abspath(file)) + r'/obrada.tex'
         shutil.copy(src, dst)
         return dst
 
@@ -127,7 +127,7 @@ class RetainingWall2Tex(RetainingWall2):
         for i in files:
             if i.endswith(".pdf"):
                 os.remove(i)
-        path_pdf_latex = 'pdflatex.exe'
+        path_pdf_latex = 'pdflatex'
         os.system(f'{path_pdf_latex} obrada.tex')
         os.rename("obrada.pdf", 'RetainingWall2_report.pdf')
         files_to_delete = ["obrada.tex", "obrada.aux", "obrada.log", "obrada.out", "obrada.synctex.gz"]
