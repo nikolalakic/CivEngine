@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
 
 
 class NosivostModel:
-    def __init__(self, hfl_str, beff_val, bw_val, b_val, As1_val, As2_val, fck_val, d_val, d1_val, Ned_val, d2_val=0.0):
+    def __init__(self, hfl_str, beff_val, bw_val, b_val, As1_val, As2_val, fck_val, h_val, d1_val, Ned_val, d2_val=0.0):
         self.hfl_str = hfl_str.strip().lower()
         self.beff = float(beff_val) / 100.0 if beff_val else 0.0
         self.bw = float(bw_val) / 100.0 if bw_val else 0.0
@@ -16,9 +16,9 @@ class NosivostModel:
         self.As1 = float(As1_val) * math.pow(10, -4)
         self.As2 = float(As2_val) * math.pow(10, -4) if As2_val else 0.0
         self.fck_MPA = int(fck_val)
-        self.d = float(d_val) / 100.0
+        self.h = float(h_val) / 100.0
         self.d1 = float(d1_val) / 100.0
-        self.h = self.d + self.d1
+        self.d = self.h - self.d1
         self.Ned = float(Ned_val)
         self.d2 = float(d2_val) / 100.0 if d2_val else 0.0
 
@@ -245,7 +245,7 @@ class Window(QWidget):
         self.fck_input = QLineEdit()
         self.Ned_input = QLineEdit()
         self.b_input = QLineEdit()
-        self.d_input = QLineEdit()
+        self.h_input = QLineEdit()
         self.d1_input = QLineEdit()
         self.As1_input = QLineEdit()
         self.As2_input = QLineEdit()
@@ -278,7 +278,7 @@ class Window(QWidget):
         self.row_d2 = QLabel("Rastojanje d2 [cm]:")
 
         self.form_layout.addRow(self.row_b, self.b_input)
-        self.form_layout.addRow(QLabel("Statička visina d [cm]:"), self.d_input)
+        self.form_layout.addRow(QLabel("Visina poprečnog preseka h [cm]:"), self.h_input)
         self.form_layout.addRow(QLabel("Rastojanje d1 [cm]:"), self.d1_input)
         self.form_layout.addRow(QLabel("Zategnuta armatura As1 [cm²]:"), self.As1_input)
         self.form_layout.addRow(self.row_As2, self.As2_input)
@@ -329,7 +329,7 @@ class Window(QWidget):
         try:
             fck = self.fck_input.text()
             Ned = self.Ned_input.text()
-            d = self.d_input.text()
+            h = self.h_input.text()
             d1 = self.d1_input.text()
             As1 = self.As1_input.text()
 
@@ -348,7 +348,7 @@ class Window(QWidget):
                 As2 = "0"
                 d2 = "0"
 
-            model = NosivostModel(hfl_str, beff, bw, b, As1, As2, fck, d, d1, Ned, float(d2))
+            model = NosivostModel(hfl_str, beff, bw, b, As1, As2, fck, h, d1, Ned, float(d2))
             mrd, greska, tip = model.nosivost()
 
             rezultat_tekst = (
