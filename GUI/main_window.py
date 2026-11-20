@@ -88,8 +88,6 @@ class MainWindow(QWidget):
         self.beton_layout.addWidget(self.beton_button4)
         self.celik_layout.addWidget(self.celik_naslov)
         self.celik_layout.addWidget(self.celik_button1)
-        self.glavni_layout.addLayout(self.beton_layout)
-        self.glavni_layout.addLayout(self.celik_layout)
         self.glavni_layout.addWidget(self.beton_frame)
         self.glavni_layout.addWidget(self.celik_frame)
 

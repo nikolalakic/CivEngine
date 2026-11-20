@@ -1,9 +1,8 @@
 import math
-import os.path
 
 import numpy as np
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap
+from GUI.ConcreteElementsWindows.section_drawings import InteractionDiagramDrawing
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QFormLayout, QLabel, QLineEdit, QPushButton)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -437,22 +436,8 @@ class Window(QWidget):
         # Kreiranje vertikalnog layout-a za sliku (desna strana)
         self.slika_layout = QVBoxLayout()
 
-        self.slika_label = QLabel("Ovde ide slika poprečnog preseka\n(Postavite sliku npr. preseka stubova)")
-        self.slika_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.slika_label.setStyleSheet(
-            "border: 2px dashed #aaa; background-color: palette(window); color: #555; border-radius: 8px;")
-        self.slika_label.setMinimumSize(450, 500)
-        putanja_slike = os.path.join("Graphics", "interaction_diagram.png")
-
-        if os.path.exists(putanja_slike):
-            pixmap = QPixmap(putanja_slike)
-            # Skaliranje slike da lepo stane u prozor uz očuvanje srazmere
-            self.slika_label.setPixmap(
-                pixmap.scaled(440, 490, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
-        else:
-            self.slika_label.setText(f"Slika nije pronađena!\nOčekivana putanja:\n{putanja_slike}")
-            self.slika_label.setStyleSheet(
-                "border: 2px dashed red; color: red; background-color: palette(window); border-radius: 8px;")
+        # Statičan vektorski crtež preseka (QPainter), umesto rasterske slike
+        self.slika_label = InteractionDiagramDrawing(450, 500)
 
         self.slika_layout.addWidget(self.slika_label)
 

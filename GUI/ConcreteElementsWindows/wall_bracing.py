@@ -1,8 +1,7 @@
 import math
-import os.path
 import numpy as np
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap
+from GUI.ConcreteElementsWindows.section_drawings import WallBracingDrawing
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QFormLayout, QLabel, QLineEdit, QPushButton,
                              QTableWidget, QTableWidgetItem, QMessageBox,
@@ -292,21 +291,8 @@ class Window(QWidget):
         # ----------------------------------------------------
         self.slika_layout = QVBoxLayout()
 
-        self.slika_label = QLabel("Slika preseka")
-        self.slika_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.slika_label.setStyleSheet(
-            "border: 2px dashed #aaa; background-color: palette(window); color: #555; border-radius: 8px;")
-        self.slika_label.setMinimumSize(400, 500)
-
-        putanja_slike = os.path.join("Graphics", "wall_bracing.png")
-        if os.path.exists(putanja_slike):
-            pixmap = QPixmap(putanja_slike)
-            self.slika_label.setPixmap(
-                pixmap.scaled(390, 490, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
-        else:
-            self.slika_label.setText(f"Slika nije pronađena!\nOčekivana putanja:\n{putanja_slike}")
-            self.slika_label.setStyleSheet(
-                "border: 2px dashed red; color: red; background-color: palette(window); border-radius: 8px;")
+        # Statičan vektorski crtež preseka (QPainter), umesto rasterske slike
+        self.slika_label = WallBracingDrawing(400, 500)
 
         self.slika_layout.addWidget(self.slika_label)
 
