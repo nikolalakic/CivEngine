@@ -27,6 +27,8 @@ class _SectionDrawing(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._p = None
+        self._pen_w = 1.3
+        self._cosmetic = True
 
     # ------------------------------------------------------------------
     # Qt
@@ -38,6 +40,7 @@ class _SectionDrawing(QWidget):
 
         pal = self.palette()
         self.fg = pal.color(QPalette.ColorRole.WindowText)
+        self._pen_w = 1.3
 
         # Okvir
         frame = QRectF(self.rect()).adjusted(1, 1, -1, -1)
@@ -45,21 +48,66 @@ class _SectionDrawing(QWidget):
         p.setBrush(pal.color(QPalette.ColorRole.Window))
         p.drawRoundedRect(frame, 8, 8)
 
-        # Skaliranje logičkih koordinata na raspoloživi prostor
-        avail_w = frame.width() - 2 * self.MARGIN
-        avail_h = frame.height() - 2 * self.MARGIN
-        s = min(avail_w / self.LOGICAL_W, avail_h / self.LOGICAL_H)
-        off_x = frame.left() + (frame.width() - self.LOGICAL_W * s) / 2
-        off_y = frame.top() + (frame.height() - self.LOGICAL_H * s) / 2
-        p.translate(off_x, off_y)
-        p.scale(s, s)
+        self._paint_logical(p, frame.adjusted(self.MARGIN, self.MARGIN, -self.MARGIN, -self.MARGIN))
+        p.end()
 
+    def _paint_logical(self, p, target):
+        """Skalira logičke koordinate na pravougaonik `target` i crta."""
+        s = min(target.width() / self.LOGICAL_W, target.height() / self.LOGICAL_H)
+        p.save()
+        p.translate(target.left() + (target.width() - self.LOGICAL_W * s) / 2,
+                    target.top() + (target.height() - self.LOGICAL_H * s) / 2)
+        p.scale(s, s)
         self._p = p
         self._set_pen()
         p.setBrush(Qt.BrushStyle.NoBrush)
         self.draw()
         self._p = None
-        p.end()
+        p.restore()
+
+    def save_image(self, path, width_mm=80):
+        """Snima crtež u fajl (crno na belom), za izveštaje.
+
+        .pdf -> vektorski crtež (QPdfWriter), ostalo (.png) -> raster 300 dpi.
+        """
+        from PyQt6.QtCore import QMarginsF, QSizeF
+        from PyQt6.QtGui import QColor, QImage, QPageLayout, QPageSize, QPdfWriter
+
+        dpi = 300
+        height_mm = width_mm * self.LOGICAL_H / self.LOGICAL_W
+        w_px = round(width_mm / 25.4 * dpi)
+        h_px = round(height_mm / 25.4 * dpi)
+        self.fg = QColor('black')
+        # Pri izvozu: obična (ne-kozmetička) olovka debljine 0.25 mm,
+        # izražena u logičkim jedinicama crteža.
+        self._cosmetic = False
+        self._pen_w = 0.25 / width_mm * self.LOGICAL_W
+
+        if str(path).lower().endswith('.pdf'):
+            writer = QPdfWriter(str(path))
+            writer.setResolution(dpi)
+            writer.setPageLayout(QPageLayout(
+                QPageSize(QSizeF(width_mm, height_mm), QPageSize.Unit.Millimeter),
+                QPageLayout.Orientation.Portrait, QMarginsF(0, 0, 0, 0)))
+            p = QPainter(writer)
+            target = QRectF(0, 0, writer.width(), writer.height())
+            p.setRenderHint(QPainter.RenderHint.Antialiasing)
+            self._paint_logical(p, target)
+            p.end()
+        else:
+            img = QImage(w_px, h_px, QImage.Format.Format_RGB32)
+            img.setDotsPerMeterX(round(dpi / 0.0254))
+            img.setDotsPerMeterY(round(dpi / 0.0254))
+            img.fill(QColor('white'))
+            p = QPainter(img)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing)
+            p.setRenderHint(QPainter.RenderHint.TextAntialiasing)
+            self._paint_logical(p, QRectF(0, 0, w_px, h_px))
+            p.end()
+            if not img.save(str(path)):
+                raise OSError(f'Nije moguće snimiti sliku: {path}')
+        self._pen_w = 1.3
+        self._cosmetic = True
 
     def draw(self):
         raise NotImplementedError
@@ -67,9 +115,9 @@ class _SectionDrawing(QWidget):
     # ------------------------------------------------------------------
     # Pomoćne funkcije za crtanje
     # ------------------------------------------------------------------
-    def _set_pen(self, width=1.3):
-        pen = QPen(self.fg, width)
-        pen.setCosmetic(True)  # debljina linije ne zavisi od skaliranja
+    def _set_pen(self, width=None):
+        pen = QPen(self.fg, width or self._pen_w)
+        pen.setCosmetic(self._cosmetic)  # na ekranu debljina ne zavisi od skaliranja
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
         self._p.setPen(pen)

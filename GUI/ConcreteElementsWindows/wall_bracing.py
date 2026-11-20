@@ -2,6 +2,7 @@ import math
 import numpy as np
 from PyQt6.QtCore import Qt
 from GUI.ConcreteElementsWindows.section_drawings import WallBracingDrawing
+from GUI.ConcreteElementsWindows.report_buttons import ReportButtons
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QFormLayout, QLabel, QLineEdit, QPushButton,
                              QTableWidget, QTableWidgetItem, QMessageBox,
@@ -117,12 +118,16 @@ class UtezanjeZida:
 
     def Utezanje(self):
         rezultati_log = []
+        # Međurezultati proračuna (koristi ih generator izveštaja)
+        self.detalji = {'slucaj': None}
 
         # Kontrola normalizovane sile
         if self.ni <= 0.15:
+            self.detalji['slucaj'] = 'nije_potrebno'
             rezultati_log.append(f'Nije potrebno utezanje krajeva zida {self.naziv_zida}')
             return "\n".join(rezultati_log)
         elif self.ni > 0.4:
+            self.detalji['slucaj'] = 'prekoracena_sila'
             ni_rnd = round(self.ni, 2)
             raise ValueError(
                 f'Prekoračena maksimalna normalizovana sila za seizmički zid {self.naziv_zida}!!!\nν = {ni_rnd} , ν_max = 0.4')
@@ -144,12 +149,24 @@ class UtezanjeZida:
         epsilon_cu2c_prov = 0.0035 + 0.1 * alfa * omega_d_prov
         lc_req = xu * (1 - 0.0035 / epsilon_cu2c_prov)
 
-        limit_omega = min(0.08, alfa_omegad_req / alfa)
-        if omega_d_prov <= limit_omega:
+        # EC8 5.4.3.4.2: ω_wd mora biti najmanje 0.08 i najmanje α·ω_wd,req / α
+        limit_omega = max(0.08, alfa_omegad_req / alfa)
+        if omega_d_prov < limit_omega:
             rezultati_log.append('Nije obezbeđeno dovoljno utezanje ivičnog elementa!')
             rezultati_log.append(f'ω_wd,prov = {omega_d_prov:.4f} < ω_wd,req = {limit_omega:.4f}')
 
         bo_min = self.Kontrola_minimalne_debljine_utegnutog_elementa()
+
+        self.detalji.update(
+            slucaj='proracun', predimenzionisan=self.MRd >= self.MEd * self.q0,
+            mfi=self.Mfi(), xu=xu, alfa_omegad_req=alfa_omegad_req, lc_mreq=lc_mreq,
+            epsilon_cu2_c=0.0035 + 0.1 * alfa_omegad_req,
+            lc_mreq_racunsko=xu * (1 - 0.0035 / (0.0035 + 0.1 * alfa_omegad_req)),
+            alfa=alfa, alfa_s=alfa_s, alfa_n=alfa_n, Vco=Vco, Vsw=Vsw, omega_d_prov=omega_d_prov,
+            epsilon_cu2c_prov=epsilon_cu2c_prov, lc_req=lc_req, limit_omega=limit_omega,
+            dovoljno_omega=omega_d_prov >= limit_omega,
+            b0_min_hs10=self.h_0 >= max(self.b, 0.2 * self.h),
+            dovoljno_utegnut=not (lc_req >= self.h_0))
         rezultati_log.append(bo_min)
 
 
@@ -259,6 +276,10 @@ class Window(QWidget):
         self.calc_button.clicked.connect(self.pokreni_proracun)
         self.ulazni_podaci_layout.addRow(self.calc_button)
 
+        self.izvestaj_dugmici = ReportButtons(
+            self.napravi_izvestaj, lambda: 'Utezanje_zida_' + (self.naziv_zida_input.text().strip() or 'Z1'))
+        self.ulazni_podaci_layout.addRow(self.izvestaj_dugmici)
+
         # ----------------------------------------------------
         # 2. SREDINA: Excel-like tabela za razmake bi [cm]
         # ----------------------------------------------------
@@ -340,35 +361,43 @@ class Window(QWidget):
             else:
                 QMessageBox.warning(self, "Upozorenje", "Tabela je već prazna!")
 
+    def procitaj_ulaz(self):
+        """Vraća (params, bi_niz) iz polja za unos i tabele."""
+        params = {
+            'naziv_zida': self.naziv_zida_input.text(),
+            'NEd': float(self.NEd_input.text()),
+            'b': float(self.b_input.text()),
+            'h': float(self.h_input.text()),
+            'fck': float(self.fck_input.text()),
+            'q0': float(self.q0_input.text()),
+            'h0': float(self.h0_input.text()),
+            'obim_uzengija': float(self.obim_uzengija_input.text()),
+            's': float(self.s_input.text()),
+            'tip_armature': self.tip_armature_combo.currentText(),
+            'precnik_uzengije': self.precnik_combo.currentText(),
+            'T': float(self.T_input.text()),
+            'MEd': float(self.MEd_input.text()),
+            'MRd': float(self.MRd_input.text()),
+            'Hs': float(self.Hs_input.text())
+        }
+
+        bi_niz = []
+        for row in range(self.table_widget.rowCount()):
+            item = self.table_widget.item(row, 0)
+            if item and item.text().strip():
+                bi_niz.append(float(item.text()))
+
+        if not bi_niz:
+            raise ValueError("Tabela za razmake bi ne može biti prazna!")
+        return params, bi_niz
+
+    def napravi_izvestaj(self):
+        from LatexScripts.WallBracing_tex import WallBracingTex
+        return WallBracingTex(*self.procitaj_ulaz())
+
     def pokreni_proracun(self):
         try:
-            params = {
-                'naziv_zida': self.naziv_zida_input.text(),
-                'NEd': float(self.NEd_input.text()),
-                'b': float(self.b_input.text()),
-                'h': float(self.h_input.text()),
-                'fck': float(self.fck_input.text()),
-                'q0': float(self.q0_input.text()),
-                'h0': float(self.h0_input.text()),
-                'obim_uzengija': float(self.obim_uzengija_input.text()),
-                's': float(self.s_input.text()),
-                'tip_armature': self.tip_armature_combo.currentText(),
-                'precnik_uzengije': self.precnik_combo.currentText(),
-                'T': float(self.T_input.text()),
-                'MEd': float(self.MEd_input.text()),
-                'MRd': float(self.MRd_input.text()),
-                'Hs': float(self.Hs_input.text())
-            }
-
-            bi_niz = []
-            for row in range(self.table_widget.rowCount()):
-                item = self.table_widget.item(row, 0)
-                if item and item.text().strip():
-                    bi_niz.append(float(item.text()))
-
-            if not bi_niz:
-                raise ValueError("Tabela za razmake bi ne može biti prazna!")
-
+            params, bi_niz = self.procitaj_ulaz()
             proracun = UtezanjeZida(params, bi_niz)
             rezultat = proracun.Utezanje()
 

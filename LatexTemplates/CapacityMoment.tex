@@ -1,0 +1,252 @@
+\BLOCK{include '_preamble.tex'}
+
+\begin{document}
+\maketitle
+
+%% ---- POCETAK PRORACUNA ----
+
+\subsection{Ulazni parametri}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|l|c|c|}
+\hline
+Oznaka & Opis & Vrednost & Jedinica \\
+\hline
+- & Tip preseka & \VAR{'T-presek' if t_presek else 'Pravougaoni presek'} & - \\
+\hline
+$f_{ck}$ & Karakteristična čvrstoća betona & \VAR{m.fck_MPA} & MPa \\
+\hline
+$N_{Ed}$ & Aksijalna sila (pritisak +) & \VAR{m.Ned|n} & kN \\
+\hline
+\BLOCK{if t_presek}
+$b_{w}$ & Širina rebra & \VAR{(m.bw*100)|n(1)} & cm \\
+\hline
+$b_{eff}$ & Efektivna širina & \VAR{(m.beff*100)|n(1)} & cm \\
+\hline
+$h_f$ & Visina flanše & \VAR{(m.hfl*100)|n(1)} & cm \\
+\hline
+\BLOCK{else}
+$b$ & Širina preseka & \VAR{(m.b*100)|n(1)} & cm \\
+\hline
+\BLOCK{endif}
+$h$ & Visina preseka & \VAR{(m.h*100)|n(1)} & cm \\
+\hline
+$d_1$ & Rastojanje zategnute armature & \VAR{(m.d1*100)|n(1)} & cm \\
+\hline
+$A_{s1}$ & Zategnuta armatura & \VAR{(m.As1*1e4)|n} & cm$^2$ \\
+\hline
+\BLOCK{if not t_presek}
+$A_{s2}$ & Pritisnuta armatura & \VAR{(m.As2*1e4)|n} & cm$^2$ \\
+\hline
+$d_2$ & Rastojanje pritisnute armature & \VAR{(m.d2*100)|n(1)} & cm \\
+\hline
+\BLOCK{endif}
+\end{tabular}
+\caption{Ulazni parametri preseka}
+\end{table}
+
+\subsection{Materijal i geometrija}
+
+\begin{align*}
+f_{cd} &= \frac{0.85 \cdot f_{ck}}{1.5} = \frac{0.85 \cdot \VAR{m.fck_MPA}}{1.5} = \VAR{m.fcd|n} \ \mathrm{MPa} \\
+f_{yd} &= \frac{500}{1.15} = \VAR{m.fyd|n} \ \mathrm{MPa}, \qquad E_s = \VAR{m.Es} \ \mathrm{GPa} \\
+d &= h - d_1 = \VAR{(m.h*100)|n(1)} - \VAR{(m.d1*100)|n(1)} = \VAR{(m.d*100)|n(1)} \ \mathrm{cm}
+\end{align*}
+
+Proračunski slučaj: \textbf{\VAR{tip}}.
+
+\BLOCK{if t_presek}
+\subsection{Položaj neutralne linije u odnosu na flanšu}
+
+Ispituje se ravnoteža sila za neutralnu liniju na donjoj ivici flanše ($x = h_f$, pritisnuta je cela flanša širine $b_{eff}$):
+
+\begin{align*}
+F_{c}(h_f) &= \beta_{11} \cdot h_f \cdot b_{eff} \cdot f_{cd} = \VAR{d.st_hf.beta11|n(4)} \cdot \VAR{m.hfl|n(3)} \cdot \VAR{m.beff|n(3)} \cdot \VAR{m.fcd|n} \cdot 10^3 = \VAR{d.st_hf.Fc1|n} \ \mathrm{kN} \\
+\varepsilon_{s1} &= \frac{3.5 \cdot d}{h_f} - 3.5 = \frac{3.5 \cdot \VAR{(m.d*100)|n(1)}}{\VAR{(m.hfl*100)|n(1)}} - 3.5 = \VAR{d.st_hf.es1|n(3)} \ \text{‰} \\
+\sigma_{s1} &= \min(E_s \cdot \varepsilon_{s1};\ f_{yd}) = \VAR{d.st_hf.sigmas1|n} \ \mathrm{MPa}, \qquad F_{s1} = A_{s1} \cdot \sigma_{s1} = \VAR{d.st_hf.Fs1|n} \ \mathrm{kN} \\
+\Delta N(h_f) &= F_c(h_f) - F_{s1} - N_{Ed} = \VAR{d.st_hf.Fc1|n} - \VAR{d.st_hf.Fs1|n} - \VAR{m.Ned|n} = \VAR{d.st_hf.deltaN|n} \ \mathrm{kN}
+\end{align*}
+
+\begin{align*}
+\Delta N(h_f) &\geq 0 \\
+\VAR{d.st_hf.deltaN|n} &\geq 0 \quad \VAR{uslov(d.u_flansi)}
+\end{align*}
+
+\BLOCK{if d.u_flansi}
+Neutralna linija je u flanši, pa se presek proračunava kao pravougaoni širine $b = b_{eff} = \VAR{(m.beff*100)|n(1)}$ cm.
+\BLOCK{else}
+Neutralna linija je u rebru, pa se presek proračunava kao T-presek.
+\BLOCK{endif}
+\BLOCK{endif}
+
+\BLOCK{if d.putanja == 'As1'}
+\subsection{Položaj neutralne linije}
+
+Početna procena iz ravnoteže sila uz pretpostavku da armatura teče (širina $b = \VAR{(d.b_proracun*100)|n(1)}$ cm):
+
+\begin{align*}
+\xi &= \frac{A_{s1} \cdot f_{yd} + N_{Ed}}{0.81 \cdot b \cdot d \cdot f_{cd}} = \frac{\VAR{m.As1|n(6)} \cdot \VAR{m.fyd|n} \cdot 10^3 + \VAR{m.Ned|n}}{0.81 \cdot \VAR{d.b_proracun|n(3)} \cdot \VAR{m.d|n(3)} \cdot \VAR{m.fcd|n} \cdot 10^3} = \VAR{d.ksi0|n(4)} \\
+x &= \xi \cdot d = \VAR{d.ksi0|n(4)} \cdot \VAR{(m.d*100)|n(1)} = \VAR{(d.iks0*100)|n(2)} \ \mathrm{cm} \\
+\varepsilon_{s1} &= \frac{1 - \xi}{\xi} \cdot 3.5 = \frac{1 - \VAR{d.ksi0|n(4)}}{\VAR{d.ksi0|n(4)}} \cdot 3.5 = \VAR{d.es1_0|n(3)} \ \text{‰}
+\end{align*}
+
+\subsection{Pravougaoni presek sa jednostrukom armaturom}
+
+\BLOCK{if ksi_teci is none}
+\begin{align*}
+\varepsilon_{s1} &\geq 2.5 \ \text{‰} \\
+\VAR{d.es1_0|n(3)} &\geq 2.5 \quad \VAR{uslov(True)}
+\end{align*}
+
+Zategnuta armatura teče, usvaja se $\xi = \VAR{d.ksi|n(4)}$.
+\BLOCK{else}
+\begin{align*}
+\varepsilon_{s1} &< 2.5 \ \text{‰} \quad \Rightarrow \quad \xi = \frac{3.5}{3.5 + \varepsilon_{s1}} = \frac{3.5}{3.5 + \VAR{d.es1_0|n(3)}} = \VAR{ksi_teci|n(4)}
+\end{align*}
+
+\BLOCK{if ksi_teci > 0.583}
+\begin{align*}
+\xi &> 0.583 \\
+\VAR{ksi_teci|n(4)} &> 0.583 \quad \VAR{uslov(True)}
+\end{align*}
+
+Položaj neutralne linije određen je iterativno iz uslova ravnoteže $F_c - F_{s1} - N_{Ed} = 0$, gde je
+$F_c = 0.81 \cdot x \cdot b \cdot f_{cd}$ i $F_{s1} = A_{s1} \cdot \frac{\varepsilon_{s1}}{2.5} \cdot f_{yd}$ ($\varepsilon_{s1} \leq 2.5$‰). Konačno: $\xi = \VAR{d.ksi|n(4)}$, $\varepsilon_{s1} = \VAR{d.es1|n(3)}$‰.
+\BLOCK{else}
+\begin{align*}
+\xi &\leq 0.583 \\
+\VAR{ksi_teci|n(4)} &\leq 0.583 \quad \VAR{uslov(True)}
+\end{align*}
+
+Usvaja se $\xi = \VAR{d.ksi|n(4)}$.
+\BLOCK{endif}
+\BLOCK{endif}
+
+\subsection{Moment nosivosti}
+
+\begin{align*}
+M_{Rd,s} &= 0.81 \cdot \xi \cdot (1 - 0.416 \cdot \xi) \cdot b \cdot d^2 \cdot f_{cd} \\
+&= 0.81 \cdot \VAR{d.ksi|n(4)} \cdot (1 - 0.416 \cdot \VAR{d.ksi|n(4)}) \cdot \VAR{d.b_proracun|n(3)} \cdot \VAR{m.d|n(3)}^2 \cdot \VAR{m.fcd|n} \cdot 10^3 = \VAR{d.MRds|n} \ \mathrm{kNm} \\
+M_{Rd} &= M_{Rd,s} - N_{Ed} \cdot \left(\frac{h}{2} - d_1\right) = \VAR{d.MRds|n} - \VAR{m.Ned|n} \cdot \left(\frac{\VAR{m.h|n(3)}}{2} - \VAR{m.d1|n(3)}\right) = \VAR{MRd|n} \ \mathrm{kNm}
+\end{align*}
+
+\BLOCK{elif d.putanja == 'As1As2'}
+\subsection{Položaj neutralne linije}
+
+Položaj neutralne linije $\xi = x/d$ određuje se polovljenjem intervala $0.01 \leq \xi \leq 3.0$ iz uslova ravnoteže (razlika sila $\Delta N$ monotono raste sa $\xi$):
+
+\begin{align*}
+\Delta N &= F_c + F_{s2} + F_{s1} - N_{Ed} = 0 \\
+F_c &= 0.81 \cdot x \cdot b \cdot f_{cd}, \qquad F_{s2} = A_{s2} \cdot \varepsilon_{s2} \cdot E_s \\
+\varepsilon_{s2} &= 3.5 \cdot \frac{\xi - d_2/d}{\xi}, \qquad -2.175 \ \text{‰} \leq \varepsilon_{s2} \leq 2.175 \ \text{‰}
+\end{align*}
+
+\BLOCK{if d.nacin == 'pritisak'}
+Neutralna linija je ispod zategnute armature ($x \geq d$), pa je i armatura $A_{s1}$ pritisnuta:
+
+\begin{align*}
+\varepsilon_{s1} &= 3.5 \cdot \frac{\xi - 1}{\xi} \leq 2.175 \ \text{‰}, \qquad F_{s1} = + A_{s1} \cdot \varepsilon_{s1} \cdot E_s
+\end{align*}
+\BLOCK{else}
+Armatura $A_{s1}$ je zategnuta ($x < d$):
+
+\begin{align*}
+\varepsilon_{s1} &= 3.5 \cdot \frac{1 - \xi}{\xi}, \qquad \sigma_{s1} = \min(E_s \cdot \varepsilon_{s1};\ f_{yd}), \qquad F_{s1} = - A_{s1} \cdot \sigma_{s1}
+\end{align*}
+\BLOCK{endif}
+
+\BLOCK{if d.granica == 'donja'}
+Ravnoteža nije moguća u zadatom intervalu: i za $\xi = 0.01$ je $\Delta N > 0$, pa se usvaja donja granica.
+\BLOCK{elif d.granica == 'gornja'}
+Ravnoteža nije moguća u zadatom intervalu: i za $\xi = 3.0$ je $\Delta N < 0$, pa se usvaja gornja granica.
+\BLOCK{endif}
+
+Konačno rešenje (posle \VAR{d.iteracija} koraka polovljenja):
+
+\begin{align*}
+\xi &= \VAR{d.ksi|n(4)}, \qquad x = \VAR{(d.x*100)|n(2)} \ \mathrm{cm}, \qquad \varepsilon_{s2} = \VAR{d.epsilons2|n(3)} \ \text{‰}, \qquad \varepsilon_{s1} = \VAR{d.es1|n(3)} \ \text{‰} \\
+F_c &= \VAR{d.Fc|n} \ \mathrm{kN}, \qquad F_{s2} = \VAR{d.Fs2|n} \ \mathrm{kN}, \qquad F_{s1} = \VAR{d.Fs1_eff|n} \ \mathrm{kN}
+\end{align*}
+
+\subsection{Moment nosivosti}
+
+Momenti se računaju oko težišta armature $A_{s1}$, pa ona ne daje doprinos:
+
+\begin{align*}
+\zeta &= 1 - 0.416 \cdot \xi = 1 - 0.416 \cdot \VAR{d.ksi|n(4)} = \VAR{d.ceta|n(4)} \\
+M_{Rd,s} &= F_c \cdot \zeta \cdot d + F_{s2} \cdot (d - d_2) \\
+&= \VAR{d.Fc|n} \cdot \VAR{d.ceta|n(4)} \cdot \VAR{m.d|n(3)} + \VAR{d.Fs2|n} \cdot (\VAR{m.d|n(3)} - \VAR{m.d2|n(3)}) = \VAR{d.MRds|n} \ \mathrm{kNm} \\
+M_{Rd} &= M_{Rd,s} - N_{Ed} \cdot \left(\frac{h}{2} - d_1\right) = \VAR{d.MRds|n} - \VAR{m.Ned|n} \cdot \left(\frac{\VAR{m.h|n(3)}}{2} - \VAR{m.d1|n(3)}\right) = \VAR{MRd|n} \ \mathrm{kNm}
+\end{align*}
+
+\BLOCK{else}
+\subsection{T-presek (neutralna linija u rebru)}
+
+Položaj neutralne linije određuje se polovljenjem intervala $h_f \leq x \leq h$ iz uslova ravnoteže
+$\Delta N = F_{c1} - F_{c2} - F_{s1} - N_{Ed} = 0$, gde je:
+
+\begin{align*}
+\varepsilon_{cf} &= \varepsilon_c \cdot \frac{x - h_f}{x}, \qquad \varepsilon_{s1} = \frac{\varepsilon_c}{x} \cdot d - \varepsilon_c, \qquad \varepsilon_c = 3.5 \ \text{‰} \\
+F_{c1} &= \beta_{11} \cdot x \cdot b_{eff} \cdot f_{cd}, \qquad F_{c2} = \beta_{12} \cdot (x - h_f) \cdot (b_{eff} - b_w) \cdot f_{cd}, \qquad F_{s1} = A_{s1} \cdot \sigma_{s1}
+\end{align*}
+
+Konačno rešenje (posle \VAR{d.iteracija} koraka polovljenja):
+
+\begin{align*}
+x &= \VAR{(d.iks*100)|n(2)} \ \mathrm{cm}, \qquad \varepsilon_{cf} = \VAR{d.ecf|n(3)} \ \text{‰}, \qquad \varepsilon_{s1} = \VAR{d.es1|n(3)} \ \text{‰} \\
+\beta_{11} &= \frac{3 \cdot \varepsilon_c - 2}{3 \cdot \varepsilon_c} = \VAR{d.beta11|n(4)}
+\end{align*}
+
+\BLOCK{if d.ecf <= 2}
+\begin{align*}
+\varepsilon_{cf} &\leq 2 \ \text{‰} \quad \Rightarrow \quad \beta_{12} = \frac{\varepsilon_{cf} \cdot (6 - \varepsilon_{cf})}{12} = \frac{\VAR{d.ecf|n(3)} \cdot (6 - \VAR{d.ecf|n(3)})}{12} = \VAR{d.beta12|n(4)}
+\end{align*}
+\BLOCK{else}
+\begin{align*}
+2 \ \text{‰} &< \varepsilon_{cf} \leq 3.5 \ \text{‰} \quad \Rightarrow \quad \beta_{12} = \frac{3 \cdot \varepsilon_{cf} - 2}{3 \cdot \varepsilon_{cf}} = \VAR{d.beta12|n(4)}
+\end{align*}
+\BLOCK{endif}
+
+\begin{align*}
+\sigma_{s1} &= \min(E_s \cdot \varepsilon_{s1};\ f_{yd}) = \VAR{d.sigmas1|n} \ \mathrm{MPa} \\
+F_{c1} &= \VAR{d.Fc1|n} \ \mathrm{kN}, \qquad F_{c2} = \VAR{d.Fc2|n} \ \mathrm{kN}, \qquad F_{s1} = \VAR{d.Fs1|n} \ \mathrm{kN}
+\end{align*}
+
+\BLOCK{if d.ecf < 2}
+\begin{align*}
+\beta_{21} &= 0.416, \qquad \varepsilon_{cf} < 2 \ \text{‰} \quad \Rightarrow \quad \beta_{22} = \frac{8 - \varepsilon_{cf}}{4 \cdot (6 - \varepsilon_{cf})} = \VAR{d.beta22|n(4)}
+\end{align*}
+\BLOCK{else}
+\begin{align*}
+\beta_{21} &= 0.416, \qquad 2 \ \text{‰} \leq \varepsilon_{cf} \leq 3.5 \ \text{‰} \quad \Rightarrow \quad \beta_{22} = \frac{\varepsilon_{cf} \cdot (3 \cdot \varepsilon_{cf} - 4) + 2}{2 \cdot \varepsilon_{cf} \cdot (3 \cdot \varepsilon_{cf} - 2)} = \VAR{d.beta22|n(4)}
+\end{align*}
+\BLOCK{endif}
+
+\subsection{Moment nosivosti}
+
+\begin{align*}
+M_{Rd,s} &= F_{c1} \cdot (d - \beta_{21} \cdot x) - F_{c2} \cdot \left(d - h_f - \beta_{22} \cdot (x - h_f)\right) \\
+&= \VAR{d.Fc1|n} \cdot (\VAR{m.d|n(3)} - 0.416 \cdot \VAR{d.iks|n(4)}) - \VAR{d.Fc2|n} \cdot \left(\VAR{m.d|n(3)} - \VAR{m.hfl|n(3)} - \VAR{d.beta22|n(4)} \cdot (\VAR{d.iks|n(4)} - \VAR{m.hfl|n(3)})\right) = \VAR{d.MRds|n} \ \mathrm{kNm} \\
+M_{Rd} &= M_{Rd,s} - N_{Ed} \cdot \left(\frac{h}{2} - d_1\right) = \VAR{d.MRds|n} - \VAR{m.Ned|n} \cdot \left(\frac{\VAR{m.h|n(3)}}{2} - \VAR{m.d1|n(3)}\right) = \VAR{MRd|n} \ \mathrm{kNm}
+\end{align*}
+\BLOCK{endif}
+
+\subsection{Kontrola ravnoteže sila}
+
+\begin{align*}
+|\Delta N| &\leq \VAR{tolerancija|n(1)} \ \mathrm{kN} \\
+\VAR{delta|n(4)} &\leq \VAR{tolerancija|n(1)} \quad \VAR{kontrola(ravnoteza_ok)}
+\end{align*}
+
+\subsection{Zaključak}
+
+Moment nosivosti preseka (\VAR{tip}): $M_{Rd} = \VAR{MRd|n} \ \mathrm{kNm}$.
+
+\BLOCK{if not ravnoteza_ok}
+\textbf{Upozorenje:} iterativni postupak nije postigao ravnotežu sila sa zadatom tačnošću; rezultat treba proveriti.
+\BLOCK{endif}
+
+%% ---- KRAJ PRORACUNA ----
+
+\end{document}

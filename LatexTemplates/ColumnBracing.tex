@@ -1,0 +1,185 @@
+\BLOCK{include '_preamble.tex'}
+
+\begin{document}
+\maketitle
+
+%% ---- POCETAK PRORACUNA ----
+
+\subsection{Ulazni parametri}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|l|c|c|}
+\hline
+Oznaka & Opis & Vrednost & Jedinica \\
+\hline
+$N_{Ed}$ & Normalna sila pritiska & \VAR{m.NEd|n} & kN \\
+\hline
+$b$ & Širina preseka & \VAR{(m.b*100)|n(1)} & cm \\
+\hline
+$h$ & Visina preseka & \VAR{(m.h*100)|n(1)} & cm \\
+\hline
+$f_{ck}$ & Karakteristična čvrstoća betona & \VAR{(m.fck/1000)|n(0)} & MPa \\
+\hline
+$q_0$ & Osnovna vrednost faktora ponašanja & \VAR{m.q0|n} & - \\
+\hline
+$O$ & Obim uzengija & \VAR{(m.ObimUzg*100)|n(1)} & cm \\
+\hline
+- & Tip armature & \VAR{m.tip_armature} & - \\
+\hline
+$\phi_w$ & Prečnik uzengija & \VAR{precnik} & mm \\
+\hline
+$T$ & Period oscilovanja & \VAR{m.T|n} & s \\
+\hline
+$M_{Ed}$ & Seizmički moment & \VAR{m.MEd|n} & kNm \\
+\hline
+$M_{Rd}$ & Moment nosivosti & \VAR{m.MRd|n} & kNm \\
+\hline
+$b_i$ & Razmaci pridržanih šipki & \VAR{bi|map('n', 1)|join(', ')} & cm \\
+\hline
+\end{tabular}
+\caption{Ulazni parametri stuba \VAR{naziv|tex}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{\VAR{slike.presek}}
+\caption{Poprečni presek stuba sa oznakama}
+\end{figure}
+
+\subsection{Materijal i geometrija utegnutog jezgra}
+
+\begin{align*}
+f_{cd} &= \frac{0.85 \cdot f_{ck}}{1.5} = \frac{0.85 \cdot \VAR{(m.fck/1000)|n(0)}}{1.5} = \VAR{(m.fcd/1000)|n} \ \mathrm{MPa} \\
+f_{yd} &= \frac{f_{yk}}{\gamma_s} = \frac{500}{1.15} = \VAR{(m.fyd/1000)|n} \ \mathrm{MPa} \\
+\varepsilon_{sy,d} &= \VAR{(m.esyd*1000)|n(3)} \ \text{‰} \\
+b_0 &= b - 8 = \VAR{(m.b*100)|n(1)} - 8 = \VAR{(m.b0*100)|n(1)} \ \mathrm{cm} \\
+h_0 &= h - 8 = \VAR{(m.h*100)|n(1)} - 8 = \VAR{(m.h0*100)|n(1)} \ \mathrm{cm} \\
+A_{sw} &= \frac{\phi_w^2 \cdot \pi}{4} = \VAR{(m.izabrani_fi*10000)|n(3)} \ \mathrm{cm^2}
+\end{align*}
+
+\subsection{Normalizovana aksijalna sila}
+
+\begin{align*}
+\nu_{Ed} &= \frac{N_{Ed}}{b \cdot h \cdot f_{cd}} = \frac{\VAR{m.NEd|n}}{\VAR{m.b|n(3)} \cdot \VAR{m.h|n(3)} \cdot \VAR{(m.fcd/1000)|n} \cdot 10^3} = \VAR{m.nied|n(3)}
+\end{align*}
+
+Kontrola maksimalne normalizovane sile:
+
+\begin{align*}
+\nu_{Ed} &\leq 0.65 \\
+\VAR{m.nied|n(3)} &\leq 0.65 \quad \VAR{kontrola(m.nied <= 0.65)}
+\end{align*}
+
+\BLOCK{if d.slucaj == 'prekoracena_sila'}
+\textbf{Zaključak:} normalizovana sila je veća od dozvoljene. Potrebno je povećati marku betona ili dimenzije stuba; dalji proračun utezanja se ne sprovodi.
+\BLOCK{elif d.slucaj == 'EC2'}
+Kako je $\nu_{Ed} = \VAR{m.nied|n(3)} \leq 0.2$ i $q_0 = \VAR{m.q0|n} \leq 2$:
+
+\textbf{Zaključak:} utezanje se ne proračunava, primenjuju se konstruktivna pravila iz EC2.
+\BLOCK{else}
+
+\subsection{Faktor duktilnosti krivine $\mu_\phi$}
+
+Kontrola predimenzionisanosti preseka:
+
+\begin{align*}
+M_{Rd} &\geq q_0 \cdot M_{Ed} \\
+\VAR{m.MRd|n} &\geq \VAR{m.q0|n} \cdot \VAR{m.MEd|n} = \VAR{(m.q0*m.MEd)|n} \quad \VAR{uslov(d.predimenzionisan)}
+\end{align*}
+
+\BLOCK{if d.predimenzionisan}
+Presek je predimenzionisan, pa se usvaja minimalna vrednost:
+
+\begin{align*}
+\mu_\phi = 1
+\end{align*}
+\BLOCK{else}
+Koeficijent za tip armature \VAR{m.tip_armature}: $k = \VAR{k_arm|n(1)}$.
+
+\BLOCK{if m.T > m.Tc}
+Kako je $T = \VAR{m.T|n} \ \mathrm{s} > T_C = \VAR{m.Tc|n} \ \mathrm{s}$:
+
+\begin{align*}
+\mu_\phi &= k \cdot \left( 2 \cdot q_0 \cdot \frac{M_{Ed}}{M_{Rd}} - 1 \right) = \VAR{k_arm|n(1)} \cdot \left( 2 \cdot \VAR{m.q0|n} \cdot \frac{\VAR{m.MEd|n}}{\VAR{m.MRd|n}} - 1 \right) = \VAR{d.mfi|n(3)}
+\end{align*}
+\BLOCK{else}
+Kako je $T = \VAR{m.T|n} \ \mathrm{s} \leq T_C = \VAR{m.Tc|n} \ \mathrm{s}$:
+
+\begin{align*}
+\mu_\phi &= k \cdot \left( 2 \cdot q_0 \cdot \frac{M_{Ed}}{M_{Rd}} - 1 \right) \cdot \frac{T_C}{T} + 1 \\
+&= \VAR{k_arm|n(1)} \cdot \left( 2 \cdot \VAR{m.q0|n} \cdot \frac{\VAR{m.MEd|n}}{\VAR{m.MRd|n}} - 1 \right) \cdot \frac{\VAR{m.Tc|n}}{\VAR{m.T|n}} + 1 = \VAR{d.mfi|n(3)}
+\end{align*}
+\BLOCK{endif}
+\BLOCK{endif}
+
+\subsection{Koeficijent efikasnosti utezanja u preseku $\alpha_n$}
+
+\begin{align*}
+\alpha_n &= 1 - \frac{\sum b_i^2}{6 \cdot b_0 \cdot h_0} = 1 - \frac{\VAR{bi|map('n', 1)|join('^2 + ')}^2}{6 \cdot \VAR{(m.b0*100)|n(1)} \cdot \VAR{(m.h0*100)|n(1)}} = \VAR{d.alfan|n(4)}
+\end{align*}
+
+\subsection{Mehanički zapreminski procenat utezanja}
+
+Zapremina uzengija po jednom redu:
+
+\begin{align*}
+V_{sw} &= A_{sw} \cdot O = \VAR{(m.izabrani_fi*10000)|n(3)} \cdot \VAR{(m.ObimUzg*100)|n(1)} = \VAR{(d.Vsw*1e6)|n(2)} \ \mathrm{cm^3}
+\end{align*}
+
+Za svaki razmak uzengija $s$ (redom 20, 15, 12.5, 10 i 7.5 cm) proverava se uslov $\omega_{wd,prov} \geq \omega_{wd,req}$, gde je:
+
+\begin{align*}
+\alpha_s &= \left(1 - \frac{s}{2 \cdot b_0}\right) \cdot \left(1 - \frac{s}{2 \cdot h_0}\right), \qquad \alpha = \alpha_n \cdot \alpha_s \\
+\omega_{wd,prov} &= \frac{V_{sw} \cdot f_{yd}}{b_0 \cdot h_0 \cdot s \cdot f_{cd}} \\
+\alpha \cdot \omega_{wd,req} &= 30 \cdot \mu_\phi \cdot \nu_{Ed} \cdot \varepsilon_{sy,d} \cdot \frac{b}{b_0} - 0.035 = 30 \cdot \VAR{d.mfi|n(3)} \cdot \VAR{m.nied|n(3)} \cdot \VAR{m.esyd|n(6)} \cdot \frac{\VAR{(m.b*100)|n(1)}}{\VAR{(m.b0*100)|n(1)}} - 0.035 = \VAR{iteracije[0].alfa_omegawdreq|n(4)} \\
+\omega_{wd,req} &= \frac{\alpha \cdot \omega_{wd,req}}{\alpha}
+\end{align*}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+$s$ [cm] & $\alpha_s$ & $\alpha$ & $\omega_{wd,prov}$ & $\omega_{wd,req}$ & Kontrola \\
+\hline
+\BLOCK{for it in iteracije}
+\VAR{(it.s*100)|n(1)} & \VAR{it.alfas|n(4)} & \VAR{it.alfa|n(4)} & \VAR{it.omegawdprov|n(4)} & \VAR{it.omegawdreq|n(4)} & \VAR{'zadovoljava' if it.zadovoljava else 'ne zadovoljava'} \\
+\hline
+\BLOCK{endfor}
+\end{tabular}
+\caption{Provera razmaka uzengija $\phi$\VAR{precnik}}
+\end{table}
+
+\BLOCK{set it = iteracije[-1]}
+\BLOCK{if d.uspeh}
+Usvojeni razmak uzengija je $s = \VAR{(it.s*100)|n(1)} \ \mathrm{cm}$:
+\BLOCK{else}
+Ni najmanji razmak ne zadovoljava; prikaz za $s = \VAR{(it.s*100)|n(1)} \ \mathrm{cm}$:
+\BLOCK{endif}
+
+\begin{align*}
+\alpha_s &= \left(1 - \frac{\VAR{(it.s*100)|n(1)}}{2 \cdot \VAR{(m.b0*100)|n(1)}}\right) \cdot \left(1 - \frac{\VAR{(it.s*100)|n(1)}}{2 \cdot \VAR{(m.h0*100)|n(1)}}\right) = \VAR{it.alfas|n(4)} \\
+\alpha &= \alpha_n \cdot \alpha_s = \VAR{d.alfan|n(4)} \cdot \VAR{it.alfas|n(4)} = \VAR{it.alfa|n(4)} \\
+\omega_{wd,prov} &= \frac{\VAR{(d.Vsw*1e6)|n(2)} \cdot \VAR{(m.fyd/1000)|n}}{\VAR{(m.b0*100)|n(1)} \cdot \VAR{(m.h0*100)|n(1)} \cdot \VAR{(it.s*100)|n(1)} \cdot \VAR{(m.fcd/1000)|n}} = \VAR{it.omegawdprov|n(4)} \\
+\omega_{wd,req} &= \frac{\VAR{it.alfa_omegawdreq|n(4)}}{\VAR{it.alfa|n(4)}} = \VAR{it.omegawdreq|n(4)}
+\end{align*}
+
+Kontrola utezanja:
+
+\begin{align*}
+\omega_{wd,prov} &\geq \omega_{wd,req} \\
+\VAR{it.omegawdprov|n(4)} &\geq \VAR{it.omegawdreq|n(4)} \quad \VAR{kontrola(it.zadovoljava)}
+\end{align*}
+
+\subsection{Zaključak}
+
+\BLOCK{if d.uspeh}
+Stub \VAR{naziv|tex} je dovoljno utegnut uzengijama $\phi$\VAR{precnik} na razmaku $s = \VAR{(it.s*100)|n(1)} \ \mathrm{cm}$.
+\BLOCK{else}
+\textbf{Nedovoljno utezanje stuba \VAR{naziv|tex} za izabrani prečnik uzengija $\phi$\VAR{precnik}.} Potrebno je povećati prečnik uzengija ili obim (broj krakova) uzengija.
+\BLOCK{endif}
+\BLOCK{endif}
+
+%% ---- KRAJ PRORACUNA ----
+
+\end{document}

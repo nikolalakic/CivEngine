@@ -1,0 +1,30 @@
+%# Zajednička preambula za izveštaje iz GUI-ja (Jinja2 šablon, vidi LatexScripts/report_engine.py)
+\documentclass[a4paper, 11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[serbian]{babel}
+\usepackage[left=2.5cm, top=2cm, right=1.5cm, bottom=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage[colorlinks, linkcolor=blue]{hyperref}
+
+\definecolor{ok}{RGB}{0, 120, 0}
+\definecolor{nok}{RGB}{190, 0, 0}
+
+\renewcommand{\figurename}{Slika}
+\renewcommand{\tablename}{Tabela}
+% Proračun je podeljen na podpoglavlja (\subsection) da bi mogao da se kopira u drugi izveštaj;
+% u samostalnom izveštaju se numerišu kao 1, 2, 3...
+\renewcommand{\thesubsection}{\arabic{subsection}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\allowdisplaybreaks
+
+\title{\VAR{naslov}}
+\date{\VAR{datum}}
+\author{CivEngine}

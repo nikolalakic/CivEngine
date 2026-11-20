@@ -1,0 +1,227 @@
+\BLOCK{include '_preamble.tex'}
+
+\begin{document}
+\maketitle
+
+%% ---- POCETAK PRORACUNA ----
+
+\subsection{Ulazni parametri}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|l|c|c|}
+\hline
+Oznaka & Opis & Vrednost & Jedinica \\
+\hline
+$N_{Ed}$ & Normalna sila pritiska & \VAR{m.NEd|n} & kN \\
+\hline
+$b$ & Debljina zida & \VAR{(m.b*100)|n(1)} & cm \\
+\hline
+$h$ & Dužina preseka zida & \VAR{(m.h*100)|n(1)} & cm \\
+\hline
+$f_{ck}$ & Karakteristična čvrstoća betona & \VAR{m.fck|n(0)} & MPa \\
+\hline
+$q_0$ & Osnovna vrednost faktora ponašanja & \VAR{m.q0|n} & - \\
+\hline
+$h_0$ & Dužina utegnutog elementa & \VAR{(m.h_0*100)|n(1)} & cm \\
+\hline
+$O$ & Obim uzengija za pridržavanje & \VAR{(m.obim_uzengija*100)|n(1)} & cm \\
+\hline
+$s$ & Vertikalni razmak uzengija & \VAR{(m.s*100)|n(1)} & cm \\
+\hline
+- & Tip armature & \VAR{m.tip_armature} & - \\
+\hline
+$\phi_w$ & Prečnik uzengije & \VAR{precnik} & mm \\
+\hline
+$T$ & Period oscilovanja & \VAR{m.T|n} & s \\
+\hline
+$M_{Ed}$ & Seizmički moment & \VAR{m.MEd|n} & kNm \\
+\hline
+$M_{Rd}$ & Moment nosivosti & \VAR{m.MRd|n} & kNm \\
+\hline
+$H_s$ & Čista spratna visina & \VAR{m.Hs|n} & m \\
+\hline
+$b_i$ & Razmaci pridržanih šipki & \VAR{bi|map('n', 1)|join(', ')} & cm \\
+\hline
+\end{tabular}
+\caption{Ulazni parametri zida \VAR{naziv|tex}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.42\textheight]{\VAR{slike.presek}}
+\caption{Presek zida sa utegnutim krajevima}
+\end{figure}
+
+\subsection{Materijal i geometrija}
+
+\begin{align*}
+f_{cd} &= \frac{0.85 \cdot f_{ck}}{1.5} = \frac{0.85 \cdot \VAR{m.fck|n(0)}}{1.5} = \VAR{(m.fcd/1000)|n} \ \mathrm{MPa} \\
+f_{yd} &= \frac{f_{yk}}{\gamma_s} = \frac{500}{1.15} = \VAR{(m.fyd/1000)|n} \ \mathrm{MPa} \\
+b_0 &= b - 5 = \VAR{(m.b*100)|n(1)} - 5 = \VAR{(m.b_0*100)|n(1)} \ \mathrm{cm} \\
+\omega_v &= \rho_{v,min} \cdot \frac{f_{yd}}{f_{cd}} = 0.00201 \cdot \frac{\VAR{(m.fyd/1000)|n}}{\VAR{(m.fcd/1000)|n}} = \VAR{m.omega_v|n(4)} \\
+A_{sw} &= \frac{\phi_w^2 \cdot \pi}{4} = \VAR{(m.a1_uz*10000)|n(3)} \ \mathrm{cm^2}
+\end{align*}
+
+\subsection{Normalizovana aksijalna sila}
+
+\begin{align*}
+\nu_{d} &= \frac{N_{Ed}}{b \cdot h \cdot f_{cd}} = \frac{\VAR{m.NEd|n}}{\VAR{m.b|n(3)} \cdot \VAR{m.h|n(3)} \cdot \VAR{(m.fcd/1000)|n} \cdot 10^3} = \VAR{m.ni|n(3)}
+\end{align*}
+
+Uslov potrebe za utezanjem krajeva zida:
+
+\begin{align*}
+\nu_d &> 0.15 \\
+\VAR{m.ni|n(3)} &> 0.15 \quad \VAR{uslov(m.ni > 0.15)}
+\end{align*}
+
+\BLOCK{if d.slucaj == 'nije_potrebno'}
+\textbf{Zaključak:} nije potrebno utezanje krajeva zida \VAR{naziv|tex}.
+\BLOCK{else}
+Kontrola maksimalne normalizovane sile za seizmički zid:
+
+\begin{align*}
+\nu_d &\leq 0.40 \\
+\VAR{m.ni|n(3)} &\leq 0.40 \quad \VAR{kontrola(m.ni <= 0.4)}
+\end{align*}
+
+\BLOCK{if d.slucaj == 'prekoracena_sila'}
+\textbf{Zaključak:} prekoračena je maksimalna normalizovana sila za seizmički zid \VAR{naziv|tex}; dalji proračun utezanja se ne sprovodi.
+\BLOCK{else}
+
+\subsection{Faktor duktilnosti krivine $\mu_\phi$}
+
+Kontrola predimenzionisanosti preseka:
+
+\begin{align*}
+M_{Rd} &\geq q_0 \cdot M_{Ed} \\
+\VAR{m.MRd|n} &\geq \VAR{m.q0|n} \cdot \VAR{m.MEd|n} = \VAR{(m.q0*m.MEd)|n} \quad \VAR{uslov(d.predimenzionisan)}
+\end{align*}
+
+\BLOCK{if d.predimenzionisan}
+Presek je predimenzionisan, pa se usvaja minimalna vrednost:
+
+\begin{align*}
+\mu_\phi = 1
+\end{align*}
+\BLOCK{else}
+Koeficijent za tip armature \VAR{m.tip_armature}: $k = \VAR{k_arm|n(1)}$.
+
+\BLOCK{if m.T > Tc}
+Kako je $T = \VAR{m.T|n} \ \mathrm{s} > T_C = \VAR{Tc|n} \ \mathrm{s}$:
+
+\begin{align*}
+\mu_\phi &= k \cdot \left( 2 \cdot q_0 \cdot \frac{M_{Ed}}{M_{Rd}} - 1 \right) = \VAR{k_arm|n(1)} \cdot \left( 2 \cdot \VAR{m.q0|n} \cdot \frac{\VAR{m.MEd|n}}{\VAR{m.MRd|n}} - 1 \right) = \VAR{d.mfi|n(3)}
+\end{align*}
+\BLOCK{else}
+Kako je $T = \VAR{m.T|n} \ \mathrm{s} \leq T_C = \VAR{Tc|n} \ \mathrm{s}$:
+
+\begin{align*}
+\mu_\phi &= k \cdot \left( 2 \cdot q_0 \cdot \frac{M_{Ed}}{M_{Rd}} - 1 \right) \cdot \frac{T_C}{T} + 1 \\
+&= \VAR{k_arm|n(1)} \cdot \left( 2 \cdot \VAR{m.q0|n} \cdot \frac{\VAR{m.MEd|n}}{\VAR{m.MRd|n}} - 1 \right) \cdot \frac{\VAR{Tc|n}}{\VAR{m.T|n}} + 1 = \VAR{d.mfi|n(3)}
+\end{align*}
+\BLOCK{endif}
+\BLOCK{endif}
+
+\subsection{Visina pritisnute zone i potreban procenat utezanja}
+
+\begin{align*}
+x_u &= (\nu_d + \omega_v) \cdot h \cdot \frac{b}{b_0} = (\VAR{m.ni|n(3)} + \VAR{m.omega_v|n(4)}) \cdot \VAR{(m.h*100)|n(1)} \cdot \frac{\VAR{(m.b*100)|n(1)}}{\VAR{(m.b_0*100)|n(1)}} = \VAR{(d.xu*100)|n(1)} \ \mathrm{cm} \\
+\alpha \cdot \omega_{wd,req} &= 30 \cdot \mu_\phi \cdot (\nu_d + \omega_v) \cdot \varepsilon_{sy,d} \cdot \frac{b}{b_0} - 0.035 \\
+&= 30 \cdot \VAR{d.mfi|n(3)} \cdot (\VAR{m.ni|n(3)} + \VAR{m.omega_v|n(4)}) \cdot \VAR{esyd|n(6)} \cdot \frac{\VAR{(m.b*100)|n(1)}}{\VAR{(m.b_0*100)|n(1)}} - 0.035 = \VAR{d.alfa_omegad_req|n(4)}
+\end{align*}
+
+\subsection{Minimalna dužina utezanja}
+
+\begin{align*}
+\varepsilon_{cu2,c} &= 0.0035 + 0.1 \cdot \alpha \cdot \omega_{wd,req} = 0.0035 + 0.1 \cdot \VAR{d.alfa_omegad_req|n(4)} = \VAR{d.epsilon_cu2_c|n(5)} \\
+l_{c,min} &= x_u \cdot \left(1 - \frac{\varepsilon_{cu2}}{\varepsilon_{cu2,c}}\right) = \VAR{(d.xu*100)|n(1)} \cdot \left(1 - \frac{0.0035}{\VAR{d.epsilon_cu2_c|n(5)}}\right) = \VAR{(d.lc_mreq_racunsko*100)|n(1)} \ \mathrm{cm}
+\end{align*}
+
+Uslov minimalne dužine utezanja:
+
+\begin{align*}
+l_{c,min} &\geq \max(0.15 \cdot h;\ 1.5 \cdot b) = \max(\VAR{(0.15*m.h*100)|n(1)};\ \VAR{(1.5*m.b*100)|n(1)}) = \VAR{([0.15*m.h, 1.5*m.b]|max*100)|n(1)} \ \mathrm{cm} \\
+\VAR{(d.lc_mreq_racunsko*100)|n(1)} &\geq \VAR{([0.15*m.h, 1.5*m.b]|max*100)|n(1)} \quad \VAR{uslov(d.lc_mreq_racunsko >= [0.15*m.h, 1.5*m.b]|max)}
+\end{align*}
+
+\BLOCK{if d.lc_mreq_racunsko < [0.15*m.h, 1.5*m.b]|max}
+Usvaja se minimalna dužina utezanja $l_{c,min} = \VAR{(d.lc_mreq*100)|n(1)} \ \mathrm{cm}$.
+\BLOCK{else}
+Minimalna dužina utezanja je $l_{c,min} = \VAR{(d.lc_mreq*100)|n(1)} \ \mathrm{cm}$.
+\BLOCK{endif}
+
+\subsection{Koeficijenti efikasnosti utezanja}
+
+\begin{align*}
+\alpha_n &= 1 - \frac{\sum b_i^2}{6 \cdot b_0 \cdot h_0} = 1 - \frac{\VAR{bi|map('n', 1)|join('^2 + ')}^2}{6 \cdot \VAR{(m.b_0*100)|n(1)} \cdot \VAR{(m.h_0*100)|n(1)}} = \VAR{d.alfa_n|n(4)} \\
+\alpha_s &= \left(1 - \frac{s}{2 \cdot b_0}\right) \cdot \left(1 - \frac{s}{2 \cdot h_0}\right) = \left(1 - \frac{\VAR{(m.s*100)|n(1)}}{2 \cdot \VAR{(m.b_0*100)|n(1)}}\right) \cdot \left(1 - \frac{\VAR{(m.s*100)|n(1)}}{2 \cdot \VAR{(m.h_0*100)|n(1)}}\right) = \VAR{d.alfa_s|n(4)} \\
+\alpha &= \alpha_n \cdot \alpha_s = \VAR{d.alfa_n|n(4)} \cdot \VAR{d.alfa_s|n(4)} = \VAR{d.alfa|n(4)}
+\end{align*}
+
+\subsection{Obezbeđeni mehanički zapreminski procenat utezanja}
+
+\begin{align*}
+V_{sw} &= A_{sw} \cdot O = \VAR{(m.a1_uz*10000)|n(3)} \cdot \VAR{(m.obim_uzengija*100)|n(1)} = \VAR{(d.Vsw*1e6)|n(2)} \ \mathrm{cm^3} \\
+V_{co} &= b_0 \cdot h_0 \cdot s = \VAR{(m.b_0*100)|n(1)} \cdot \VAR{(m.h_0*100)|n(1)} \cdot \VAR{(m.s*100)|n(1)} = \VAR{(d.Vco*1e6)|n(1)} \ \mathrm{cm^3} \\
+\omega_{wd,prov} &= \frac{V_{sw} \cdot f_{yd}}{V_{co} \cdot f_{cd}} = \frac{\VAR{(d.Vsw*1e6)|n(2)} \cdot \VAR{(m.fyd/1000)|n}}{\VAR{(d.Vco*1e6)|n(1)} \cdot \VAR{(m.fcd/1000)|n}} = \VAR{d.omega_d_prov|n(4)} \\
+\omega_{wd,req} &= \max\left(0.08;\ \frac{\alpha \cdot \omega_{wd,req}}{\alpha}\right) = \max\left(0.08;\ \frac{\VAR{d.alfa_omegad_req|n(4)}}{\VAR{d.alfa|n(4)}}\right) = \VAR{d.limit_omega|n(4)}
+\end{align*}
+
+Kontrola procenta utezanja:
+
+\begin{align*}
+\omega_{wd,prov} &\geq \omega_{wd,req} \\
+\VAR{d.omega_d_prov|n(4)} &\geq \VAR{d.limit_omega|n(4)} \quad \VAR{kontrola(d.dovoljno_omega)}
+\end{align*}
+
+\subsection{Potrebna dužina utezanja kraja zida}
+
+\begin{align*}
+\varepsilon_{cu2,c} &= 0.0035 + 0.1 \cdot \alpha \cdot \omega_{wd,prov} = 0.0035 + 0.1 \cdot \VAR{d.alfa|n(4)} \cdot \VAR{d.omega_d_prov|n(4)} = \VAR{d.epsilon_cu2c_prov|n(5)} \\
+l_{c} &= x_u \cdot \left(1 - \frac{\varepsilon_{cu2}}{\varepsilon_{cu2,c}}\right) = \VAR{(d.xu*100)|n(1)} \cdot \left(1 - \frac{0.0035}{\VAR{d.epsilon_cu2c_prov|n(5)}}\right) = \VAR{(d.lc_req*100)|n(1)} \ \mathrm{cm}
+\end{align*}
+
+Kontrola dužine utegnutog elementa:
+
+\begin{align*}
+l_c &< h_0 \\
+\VAR{(d.lc_req*100)|n(1)} &< \VAR{(m.h_0*100)|n(1)} \quad \VAR{kontrola(d.dovoljno_utegnut)}
+\end{align*}
+
+\subsection{Minimalna debljina utegnutog elementa}
+
+Prema članu 5.4.3.4.2 (10) Evrokoda 8:
+
+\begin{align*}
+h_0 &\geq \max(b;\ 0.2 \cdot h) = \max(\VAR{(m.b*100)|n(1)};\ \VAR{(0.2*m.h*100)|n(1)}) \quad \VAR{uslov(d.b0_min_hs10)}
+\end{align*}
+
+\BLOCK{if d.b0_min_hs10}
+\begin{align*}
+b_{0,min} &= \frac{H_s}{10} = \frac{\VAR{m.Hs|n}}{10} = \VAR{(m.Hs/10*100)|n(1)} \ \mathrm{cm}
+\end{align*}
+\BLOCK{else}
+\begin{align*}
+b_{0,min} &= \frac{H_s}{15} = \frac{\VAR{m.Hs|n}}{15} = \VAR{(m.Hs/15*100)|n(1)} \ \mathrm{cm}
+\end{align*}
+\BLOCK{endif}
+
+\subsection{Zaključak}
+
+\BLOCK{if not d.dovoljno_omega}
+Nije obezbeđen dovoljan procenat utezanja ivičnog elementa ($\omega_{wd,prov} = \VAR{d.omega_d_prov|n(4)} < \omega_{wd,req} = \VAR{d.limit_omega|n(4)}$).
+
+\BLOCK{endif}
+\BLOCK{if d.dovoljno_utegnut}
+Kraj zida \VAR{naziv|tex} je dovoljno utegnut: potrebna dužina utezanja $l_c = \VAR{(d.lc_req*100)|n(1)} \ \mathrm{cm}$ je manja od dužine utegnutog elementa $h_0 = \VAR{(m.h_0*100)|n(1)} \ \mathrm{cm}$.
+\BLOCK{else}
+\textbf{Potrebno je smanjiti stepen utezanja kraja zida ili produžiti ivični element}: $l_c = \VAR{(d.lc_req*100)|n(1)} \ \mathrm{cm} \geq h_0 = \VAR{(m.h_0*100)|n(1)} \ \mathrm{cm}$.
+\BLOCK{endif}
+\BLOCK{endif}
+\BLOCK{endif}
+
+%% ---- KRAJ PRORACUNA ----
+
+\end{document}

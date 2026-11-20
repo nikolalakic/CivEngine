@@ -2,6 +2,7 @@ import math
 import numpy as np
 from PyQt6.QtCore import Qt
 from GUI.ConcreteElementsWindows.section_drawings import ColumnBracingDrawing
+from GUI.ConcreteElementsWindows.report_buttons import ReportButtons
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QFormLayout, QLabel, QLineEdit, QPushButton,
                              QTableWidget, QTableWidgetItem, QMessageBox,
@@ -69,14 +70,19 @@ class UtezanjeStuba:
 
     def Utezanje(self):
         rezultati_log = []
+        # Međurezultati proračuna (koristi ih generator izveštaja)
+        self.detalji = {'predimenzionisan': self.MRd >= self.MEd * self.q0, 'slucaj': None}
+        self.iteracije = []
         if self.MRd >= self.MEd * self.q0:
             rezultati_log.append('Presek je predimenzionisan, usvojena je minimalna vrednost mφ = 1')
 
         if self.nied > 0.65:
+            self.detalji['slucaj'] = 'prekoracena_sila'
             raise ValueError(
                 f'Normalizovana sila ν,Ed je veća od 0.65! Povećaj marku betona ili dimenzije stuba!\nν,Ed = {self.nied:.3f} >= 0.65')
         elif self.nied <= 0.2 and self.q0 <= 2:
             rezultati_log.append('Primenjuju se pravila iz EC2!')
+            self.detalji['slucaj'] = 'EC2'
             return "\n".join(rezultati_log)
         else:
             rezultati_log.append(f'ν,Ed = {round(self.nied, 2)} <= 0.65')
@@ -107,6 +113,10 @@ class UtezanjeStuba:
                 current_omegawdreq = current_alfa_omegawdreq / current_alfa
 
                 precnik = math.sqrt(4 * x / math.pi) * 1000
+                self.iteracije.append(dict(
+                    s=p, alfas=current_alfas, alfa=current_alfa, Vco=Vco,
+                    omegawdprov=current_omegawdprov, alfa_omegawdreq=current_alfa_omegawdreq,
+                    omegawdreq=current_omegawdreq, zadovoljava=current_omegawdprov >= current_omegawdreq))
 
                 if current_omegawdprov >= current_omegawdreq:
                     rezultati_log.append(f'φ = {round(precnik, 0)} na s = {p * 100:.1f} cm ............OK!')
@@ -129,6 +139,9 @@ class UtezanjeStuba:
 
             if not uspeh:
                 rezultati_log.append('>>> Nedovoljno utezanje stuba za izabrani prečnik!')
+
+            self.detalji.update(slucaj='proracun', uspeh=uspeh, mfi=mfi, alfan=alfan,
+                                suma_bi2=proizvod, Vsw=Vsw, precnik=precnik)
 
             rezultati_log.append(f'ω_wd_prov = {omegawdprov:.4f}')
             rezultati_log.append(f'ω_wd_req = {omegawdreq:.4f}')
@@ -223,6 +236,10 @@ class Window(QWidget):
         self.calc_button.clicked.connect(self.pokreni_proracun)
         self.ulazni_podaci_layout.addRow(self.calc_button)
 
+        self.izvestaj_dugmici = ReportButtons(
+            self.napravi_izvestaj, lambda: 'Utezanje_stuba_' + (self.ime_stuba_input.text().strip() or 'S1'))
+        self.ulazni_podaci_layout.addRow(self.izvestaj_dugmici)
+
         # ----------------------------------------------------
         # 2. SREDINA: Excel-like tabela za razmake bi [cm]
         # ----------------------------------------------------
@@ -304,32 +321,41 @@ class Window(QWidget):
             else:
                 QMessageBox.warning(self, "Upozorenje", "Tabela je već prazna!")
 
+    def procitaj_ulaz(self):
+        """Vraća (params, bi_niz) iz polja za unos i tabele."""
+        params = {
+            'NEd': float(self.NEd_input.text()),
+            'b': float(self.b_input.text()),
+            'h': float(self.h_input.text()),
+            'fck': float(self.fck_input.text()),
+            'q0': float(self.q0_input.text()),
+            'ObimUzg': float(self.ObimUzg_input.text()),
+            'tip_armature': self.tip_armature_combo.currentText(),
+            'precnik_uzengije': self.precnik_combo.currentText(),
+            'T': float(self.T_input.text()),
+            'MEd': float(self.MEd_input.text()),
+            'MRd': float(self.MRd_input.text()),
+            'Hs': float(self.Hs_input.text())
+        }
+
+        bi_niz = []
+        for row in range(self.table_widget.rowCount()):
+            item = self.table_widget.item(row, 0)
+            if item and item.text().strip():
+                bi_niz.append(float(item.text()))
+
+        if not bi_niz:
+            raise ValueError("Tabela za razmake bi ne može biti prazna!")
+        return params, bi_niz
+
+    def napravi_izvestaj(self):
+        from LatexScripts.ColumnBracing_tex import ColumnBracingTex
+        params, bi_niz = self.procitaj_ulaz()
+        return ColumnBracingTex(params, bi_niz, naziv=self.ime_stuba_input.text().strip() or 'S1')
+
     def pokreni_proracun(self):
         try:
-            params = {
-                'NEd': float(self.NEd_input.text()),
-                'b': float(self.b_input.text()),
-                'h': float(self.h_input.text()),
-                'fck': float(self.fck_input.text()),
-                'q0': float(self.q0_input.text()),
-                'ObimUzg': float(self.ObimUzg_input.text()),
-                'tip_armature': self.tip_armature_combo.currentText(),
-                'precnik_uzengije': self.precnik_combo.currentText(),
-                'T': float(self.T_input.text()),
-                'MEd': float(self.MEd_input.text()),
-                'MRd': float(self.MRd_input.text()),
-                'Hs': float(self.Hs_input.text())
-            }
-
-            bi_niz = []
-            for row in range(self.table_widget.rowCount()):
-                item = self.table_widget.item(row, 0)
-                if item and item.text().strip():
-                    bi_niz.append(float(item.text()))
-
-            if not bi_niz:
-                raise ValueError("Tabela za razmake bi ne može biti prazna!")
-
+            params, bi_niz = self.procitaj_ulaz()
             proracun = UtezanjeStuba(params, bi_niz)
             rezultat = proracun.Utezanje()
 

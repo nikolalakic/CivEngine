@@ -1,0 +1,181 @@
+\BLOCK{include '_preamble.tex'}
+
+\begin{document}
+\maketitle
+
+%% ---- POCETAK PRORACUNA ----
+
+\subsection{Ulazni parametri}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|l|c|c|}
+\hline
+Oznaka & Opis & Vrednost & Jedinica \\
+\hline
+$M_{Ed}$ & Proračunski moment savijanja & \VAR{m.MEd|n} & kNm \\
+\hline
+$N_{Ed}$ & Proračunska aksijalna sila (pritisak +) & \VAR{m.NEd|n} & kN \\
+\hline
+$f_{ck}$ & Karakteristična čvrstoća betona & \VAR{m.fck|n(0)} & MPa \\
+\hline
+$k$ & Udeo zategnute armature $A_{s1}$ u ukupnoj & \VAR{(m.k*100)|n(1)} & \% \\
+\hline
+$b$ & Širina preseka & \VAR{(m.b*100)|n(1)} & cm \\
+\hline
+$h$ & Visina preseka & \VAR{(m.h*100)|n(1)} & cm \\
+\hline
+$d_1$ & Položaj zategnute armature & \VAR{(m.d1*100)|n(1)} & cm \\
+\hline
+$d_2$ & Položaj pritisnute armature & \VAR{(m.d2*100)|n(1)} & cm \\
+\hline
+\end{tabular}
+\caption{Ulazni parametri preseka}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.4\textheight]{\VAR{slike.presek}}
+\caption{Poprečni presek sa oznakama}
+\end{figure}
+
+\subsection{Materijal}
+
+\begin{align*}
+f_{cd} &= \frac{0.85 \cdot f_{ck}}{1.5} = \frac{0.85 \cdot \VAR{m.fck|n(0)}}{1.5} = \VAR{m.fcd|n} \ \mathrm{MPa} \\
+f_{yd} &= \frac{f_{yk}}{\gamma_s} = \frac{\VAR{m.fyk|n(0)}}{1.15} = \VAR{m.fyd|n} \ \mathrm{MPa} \\
+\varepsilon_{yd} &= \frac{f_{yd}}{E_s} = \frac{\VAR{m.fyd|n}}{\VAR{m.Es|n(0)} \cdot 10^3} = \VAR{(m.epsilon_yd*1000)|n(3)} \ \text{‰} \\
+\varepsilon_{cu2} &= \VAR{(m.epsilon_cu2*1000)|n(1)} \ \text{‰}
+\end{align*}
+
+\subsection{Geometrijski odnosi}
+
+\begin{align*}
+d &= h - d_1 = \VAR{(m.h*100)|n(1)} - \VAR{(m.d1*100)|n(1)} = \VAR{(m.d*100)|n(1)} \ \mathrm{cm} \\
+\alpha_1 &= \frac{d_1}{h} = \frac{\VAR{(m.d1*100)|n(1)}}{\VAR{(m.h*100)|n(1)}} = \VAR{m.alfa_1|n(4)} \\
+\alpha_2 &= \frac{d_2}{h} = \frac{\VAR{(m.d2*100)|n(1)}}{\VAR{(m.h*100)|n(1)}} = \VAR{m.alfa_2|n(4)}
+\end{align*}
+
+\subsection{Normalizovani uticaji}
+
+\begin{align*}
+\mu_{Ed} &= \frac{M_{Ed}}{b \cdot h^2 \cdot f_{cd}} = \frac{\VAR{m.MEd|n}}{\VAR{m.b|n(3)} \cdot \VAR{m.h|n(3)}^2 \cdot \VAR{m.fcd|n} \cdot 10^3} = \VAR{m.mi_Ed|n(4)} \\
+\nu_{Ed} &= \frac{N_{Ed}}{b \cdot h \cdot f_{cd}} = \frac{\VAR{m.NEd|n}}{\VAR{m.b|n(3)} \cdot \VAR{m.h|n(3)} \cdot \VAR{m.fcd|n} \cdot 10^3} = \VAR{m.ni_Ed|n(4)}
+\end{align*}
+
+\subsection{Raspodela armature}
+
+Ukupna armatura je izražena preko mehaničkog koeficijenta armiranja $\omega$ (od 0 do 0.5):
+
+\begin{align*}
+A_{s1} &= k \cdot \omega \cdot \frac{b \cdot h \cdot f_{cd}}{f_{yd}} = \VAR{m.k|n(2)} \cdot \omega \cdot \frac{b \cdot h \cdot f_{cd}}{f_{yd}} \\
+A_{s2} &= (1 - k) \cdot \omega \cdot \frac{b \cdot h \cdot f_{cd}}{f_{yd}} = \VAR{(1 - m.k)|n(2)} \cdot \omega \cdot \frac{b \cdot h \cdot f_{cd}}{f_{yd}}
+\end{align*}
+
+\subsection{Granična stanja dilatacija}
+
+Za svako stanje dilatacija sračunate su sile u betonu i armaturi, a zatim normalizovane nosivosti:
+
+\begin{align*}
+\nu_{Rd} = \frac{N_{Rd}}{b \cdot h \cdot f_{cd}}, \qquad \mu_{Rd} = \frac{M_{Rd}}{b \cdot h^2 \cdot f_{cd}}
+\end{align*}
+
+Za $\varepsilon_{c2} = 3.5$‰ koeficijent položaja rezultante pritiska u betonu iznosi:
+
+\begin{align*}
+\beta_2 &= \frac{\varepsilon_{c2} \cdot (3 \cdot \varepsilon_{c2} - 4) + 2}{2 \cdot \varepsilon_{c2} \cdot (3 \cdot \varepsilon_{c2} - 2)} = \frac{3.5 \cdot (3 \cdot 3.5 - 4) + 2}{2 \cdot 3.5 \cdot (3 \cdot 3.5 - 2)} = \VAR{stanja[1].beta2|n(4)}
+\end{align*}
+
+\BLOCK{macro ograniceno(oznaka, racunsko, usvojeno)}
+\BLOCK{if racunsko >= m.epsilon_yd}
+\begin{align*}
+\VAR{oznaka} &\geq \varepsilon_{yd} \\
+\VAR{(racunsko*1000)|n(3)} &\geq \VAR{(m.epsilon_yd*1000)|n(3)} \quad \VAR{uslov(True)} \quad \Rightarrow \quad \VAR{oznaka} = \varepsilon_{yd} = \VAR{(usvojeno*1000)|n(3)} \ \text{‰}
+\end{align*}
+\BLOCK{else}
+\begin{align*}
+\VAR{oznaka} &< \varepsilon_{yd} \\
+\VAR{(racunsko*1000)|n(3)} &< \VAR{(m.epsilon_yd*1000)|n(3)} \quad \Rightarrow \quad \VAR{oznaka} = \VAR{(usvojeno*1000)|n(3)} \ \text{‰}
+\end{align*}
+\BLOCK{endif}
+\BLOCK{endmacro}
+
+\BLOCK{for st in stanja}
+\subsubsection{\VAR{st.opis}}
+
+\BLOCK{if st.tip == 'centricni'}
+Celokupan presek je jednako pritisnut ($\varepsilon = 2$‰), armatura je raspoređena simetrično ($\omega_1 = \omega_2 = 0.5 \cdot \omega$):
+
+\begin{align*}
+N_{Rd} &= (1 + \omega) \cdot b \cdot h \cdot f_{cd} \\
+M_{Rd} &= \left[\omega_2 \cdot (0.5 - \alpha_2) - \omega_1 \cdot (0.5 - \alpha_1)\right] \cdot b \cdot h^2 \cdot f_{cd} \\
+&= \left[\omega_2 \cdot (0.5 - \VAR{m.alfa_2|n(4)}) - \omega_1 \cdot (0.5 - \VAR{m.alfa_1|n(4)})\right] \cdot b \cdot h^2 \cdot f_{cd}
+\end{align*}
+\BLOCK{elif st.tip == 'mali'}
+Neutralna linija je na donjoj ivici preseka:
+
+\begin{align*}
+x &= h = \VAR{(st.x*100)|n(1)} \ \mathrm{cm} \\
+\varepsilon_{s2} &= \varepsilon_{cu2} \cdot (1 - \alpha_2) = \VAR{(m.epsilon_cu2*1000)|n(1)} \cdot (1 - \VAR{m.alfa_2|n(4)}) = \VAR{(st.epsilon_s2_racunsko*1000)|n(3)} \ \text{‰} \\
+\varepsilon_{s1} &= \varepsilon_{cu2} \cdot \alpha_1 = \VAR{(m.epsilon_cu2*1000)|n(1)} \cdot \VAR{m.alfa_1|n(4)} = \VAR{(st.epsilon_s1_racunsko*1000)|n(3)} \ \text{‰}
+\end{align*}
+
+\VAR{ograniceno('\\varepsilon_{s2}', st.epsilon_s2_racunsko, st.epsilon_s2)}
+\VAR{ograniceno('\\varepsilon_{s1}', st.epsilon_s1_racunsko, st.epsilon_s1)}
+
+\begin{align*}
+F_c &= 0.81 \cdot \frac{d}{1 - \alpha_1} \cdot b \cdot f_{cd} = 0.81 \cdot \frac{\VAR{m.d|n(3)}}{1 - \VAR{m.alfa_1|n(4)}} \cdot \VAR{m.b|n(3)} \cdot \VAR{m.fcd|n} \cdot 10^3 = \VAR{(0.81 * m.h * m.b * m.fcd * 1000)|n} \ \mathrm{kN} \\
+F_{s1} &= A_{s1} \cdot \varepsilon_{s1} \cdot E_s, \qquad F_{s2} = A_{s2} \cdot \varepsilon_{s2} \cdot E_s \\
+N_{Rd} &= F_c + F_{s1} + F_{s2} \\
+M_{Rd} &= F_c \cdot \left(\frac{h}{2} - \beta_2 \cdot x\right) + F_{s2} \cdot \left(\frac{h}{2} - d_2\right) - F_{s1} \cdot \left(\frac{h}{2} - d_1\right)
+\end{align*}
+\BLOCK{else}
+\begin{align*}
+x &= \frac{\varepsilon_{cu2} \cdot (h - d_1)}{\varepsilon_{s1} + \varepsilon_{cu2}} = \frac{\VAR{(m.epsilon_cu2*1000)|n(1)} \cdot \VAR{(m.d*100)|n(1)}}{\VAR{(st.epsilon_s1_racunsko*1000)|n(3)} + \VAR{(m.epsilon_cu2*1000)|n(1)}} = \VAR{(st.x*100)|n(2)} \ \mathrm{cm} \\
+\varepsilon_{s2} &= \varepsilon_{cu2} \cdot \frac{x - d_2}{x} = \VAR{(m.epsilon_cu2*1000)|n(1)} \cdot \frac{\VAR{(st.x*100)|n(2)} - \VAR{(m.d2*100)|n(1)}}{\VAR{(st.x*100)|n(2)}} = \VAR{(st.epsilon_s2_racunsko*1000)|n(3)} \ \text{‰}
+\end{align*}
+
+\VAR{ograniceno('\\varepsilon_{s2}', st.epsilon_s2_racunsko, st.epsilon_s2)}
+\BLOCK{if st.epsilon_s1_racunsko > m.epsilon_yd}
+Armatura $A_{s1}$ teče, pa se za napon usvaja $\varepsilon_{s1} = \varepsilon_{yd} = \VAR{(st.epsilon_s1*1000)|n(3)}$‰.
+\BLOCK{endif}
+
+\begin{align*}
+F_c &= 0.81 \cdot x \cdot b \cdot f_{cd} = 0.81 \cdot \VAR{st.x|n(4)} \cdot \VAR{m.b|n(3)} \cdot \VAR{m.fcd|n} \cdot 10^3 = \VAR{(0.81 * st.x * m.b * m.fcd * 1000)|n} \ \mathrm{kN} \\
+F_{s1} &= A_{s1} \cdot \varepsilon_{s1} \cdot E_s, \qquad F_{s2} = A_{s2} \cdot \varepsilon_{s2} \cdot E_s \\
+N_{Rd} &= F_c - F_{s1} + F_{s2} \\
+M_{Rd} &= F_c \cdot \left(\frac{h}{2} - \beta_2 \cdot x\right) + F_{s2} \cdot \left(\frac{h}{2} - d_2\right) + F_{s1} \cdot \left(\frac{h}{2} - d_1\right)
+\end{align*}
+\BLOCK{endif}
+\BLOCK{endfor}
+
+\subsection{Dijagram interakcije}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{\VAR{slike.dijagram}}
+\caption{Dijagram interakcije sa tačkom $(\nu_{Ed}, \mu_{Ed}) = (\VAR{m.ni_Ed|n(3)}, \VAR{m.mi_Ed|n(3)})$}
+\end{figure}
+
+Tabela sadrži normalizovane nosivosti $\nu_{Rd,i}$ i $\mu_{Rd,i}$ za stanja $i = 1 \ldots 6$ (redosled kao u poglavlju o graničnim stanjima dilatacija), u zavisnosti od $\omega$:
+
+\BLOCK{for grupa in [stanja[:3], stanja[3:]]}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|c|\BLOCK{for st in grupa}cc|\BLOCK{endfor}}
+\hline
+$\omega$\BLOCK{for st in grupa} & $\nu_{Rd,\VAR{st.broj}}$ & $\mu_{Rd,\VAR{st.broj}}$\BLOCK{endfor} \\
+\hline
+\BLOCK{for red in tabela}
+\VAR{red[0]|n(3)}\BLOCK{for st in grupa} & \VAR{red[2*st.broj - 1]|n(3, False)} & \VAR{red[2*st.broj]|n(3, False)}\BLOCK{endfor} \\
+\BLOCK{endfor}
+\hline
+\end{tabular}
+\caption{Normalizovane nosivosti preseka, stanja \VAR{grupa[0].broj} do \VAR{grupa[-1].broj}}
+\end{table}
+
+\BLOCK{endfor}
+%% ---- KRAJ PRORACUNA ----
+
+\end{document}

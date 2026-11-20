@@ -3,6 +3,7 @@ import math
 import numpy as np
 from PyQt6.QtCore import Qt
 from GUI.ConcreteElementsWindows.section_drawings import InteractionDiagramDrawing
+from GUI.ConcreteElementsWindows.report_buttons import ReportButtons
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QFormLayout, QLabel, QLineEdit, QPushButton)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -31,6 +32,8 @@ class DijagramInterakcije:
         self.NEd = float(NEd)
         self.mi_Ed = self.MEd / (self.b * self.h ** 2 * self.fcd * 1000)
         self.ni_Ed = self.NEd / (self.b * self.h * self.fcd * 1000)
+        # Međurezultati po stanjima dilatacija (koristi ih generator izveštaja)
+        self.stanja = {}
 
     @staticmethod
     def beta2_koeficijent(epsilon_c2):
@@ -61,6 +64,7 @@ class DijagramInterakcije:
             mi_Rd = MRd / (self.fcd * 1000 * self.b * self.h ** 2)
             niz_ni_Rd = np.append(niz_ni_Rd, ni_Rd)
             niz_mi_Rd = np.append(niz_mi_Rd, mi_Rd)
+        self.stanja['centricni_pritisak'] = dict(epsilon_c2=0.002, epsilon_s1=0.002, epsilon_s2=0.002)
         return np.array([niz_ni_Rd, niz_mi_Rd])
 
     def granica_malog_ekscentriciteta(self):
@@ -90,6 +94,10 @@ class DijagramInterakcije:
             mi_Rd = MRd / (self.fcd * 1000 * self.b * self.h ** 2)
             niz_ni_Rd = np.append(niz_ni_Rd, ni_Rd)
             niz_mi_Rd = np.append(niz_mi_Rd, mi_Rd)
+        self.stanja['granica_malog_ekscentriciteta'] = dict(
+            epsilon_c2=epsilon_c2, beta2=beta2, x=x,
+            epsilon_s1_racunsko=self.epsilon_cu2 * self.alfa_1, epsilon_s1=epsilon_s1,
+            epsilon_s2_racunsko=epsilon_c2 * (1 - self.alfa_2), epsilon_s2=epsilon_s2)
         return np.array([niz_ni_Rd, niz_mi_Rd])
 
     def tri_i_po_sa_dva_jedan_sedam_cetiri(self):
@@ -117,6 +125,10 @@ class DijagramInterakcije:
             mi_Rd = MRd / (self.fcd * 1000 * self.b * self.h ** 2)
             niz_ni_Rd = np.append(niz_ni_Rd, ni_Rd)
             niz_mi_Rd = np.append(niz_mi_Rd, mi_Rd)
+        self.stanja['tri_i_po_sa_dva_jedan_sedam_cetiri'] = dict(
+            epsilon_c2=epsilon_c2, beta2=beta2, x=x,
+            epsilon_s1_racunsko=self.epsilon_yd, epsilon_s1=epsilon_s1,
+            epsilon_s2_racunsko=self.epsilon_cu2 * (x - self.d2) / x, epsilon_s2=epsilon_s2)
         return np.array([niz_ni_Rd, niz_mi_Rd])
 
     def tri_i_po_sa_deset(self):
@@ -146,6 +158,10 @@ class DijagramInterakcije:
             mi_Rd = MRd / (self.fcd * 1000 * self.b * self.h ** 2)
             niz_ni_Rd = np.append(niz_ni_Rd, ni_Rd)
             niz_mi_Rd = np.append(niz_mi_Rd, mi_Rd)
+        self.stanja['tri_i_po_sa_deset'] = dict(
+            epsilon_c2=epsilon_c2, beta2=beta2, x=x,
+            epsilon_s1_racunsko=0.01, epsilon_s1=epsilon_s1,
+            epsilon_s2_racunsko=self.epsilon_cu2 * (x - self.d2) / x, epsilon_s2=epsilon_s2)
         return np.array([niz_ni_Rd, niz_mi_Rd])
 
     def tri_i_po_sa_dvadeset(self):
@@ -175,6 +191,10 @@ class DijagramInterakcije:
             mi_Rd = MRd / (self.fcd * 1000 * self.b * self.h ** 2)
             niz_ni_Rd = np.append(niz_ni_Rd, ni_Rd)
             niz_mi_Rd = np.append(niz_mi_Rd, mi_Rd)
+        self.stanja['tri_i_po_sa_dvadeset'] = dict(
+            epsilon_c2=epsilon_c2, beta2=beta2, x=x,
+            epsilon_s1_racunsko=0.02, epsilon_s1=epsilon_s1,
+            epsilon_s2_racunsko=self.epsilon_cu2 * (x - self.d2) / x, epsilon_s2=epsilon_s2)
         return np.array([niz_ni_Rd, niz_mi_Rd])
 
     def tri_i_po_sa_cetrdeset(self):
@@ -204,6 +224,10 @@ class DijagramInterakcije:
             mi_Rd = MRd / (self.fcd * 1000 * self.b * self.h ** 2)
             niz_ni_Rd = np.append(niz_ni_Rd, ni_Rd)
             niz_mi_Rd = np.append(niz_mi_Rd, mi_Rd)
+        self.stanja['tri_i_po_sa_cetrdeset'] = dict(
+            epsilon_c2=epsilon_c2, beta2=beta2, x=x,
+            epsilon_s1_racunsko=0.04, epsilon_s1=epsilon_s1,
+            epsilon_s2_racunsko=self.epsilon_cu2 * (x - self.d2) / x, epsilon_s2=epsilon_s2)
         return np.array([niz_ni_Rd, niz_mi_Rd])
 
     def stampa_na_osi(self, ax):
@@ -433,6 +457,10 @@ class Window(QWidget):
         self.calc_button.clicked.connect(self.pokreni_proracun)
         self.ulazni_podaci_layout.addRow(self.calc_button)
 
+        # Dugmići za izveštaj
+        self.izvestaj_dugmici = ReportButtons(self.napravi_izvestaj, 'Dijagram_interakcije')
+        self.ulazni_podaci_layout.addRow(self.izvestaj_dugmici)
+
         # Kreiranje vertikalnog layout-a za sliku (desna strana)
         self.slika_layout = QVBoxLayout()
 
@@ -450,18 +478,19 @@ class Window(QWidget):
         self.setLayout(main_layout)
         self.plot_window = None
 
+    def procitaj_ulaz(self):
+        """Ulazni podaci redosledom (fck, k, b, h, d1, d2, MEd, NEd)."""
+        return tuple(float(polje.text()) for polje in (
+            self.fck_input, self.k_input, self.b_input, self.h_input,
+            self.d1_input, self.d2_input, self.MEd_input, self.NEd_input))
+
+    def napravi_izvestaj(self):
+        from LatexScripts.InteractionDiagram_tex import InteractionDiagramTex
+        return InteractionDiagramTex(*self.procitaj_ulaz())
+
     def pokreni_proracun(self):
         try:
-            fck = float(self.fck_input.text())
-            k = float(self.k_input.text())
-            b = float(self.b_input.text())
-            h = float(self.h_input.text())
-            d1 = float(self.d1_input.text())
-            d2 = float(self.d2_input.text())
-            MEd = float(self.MEd_input.text())
-            NEd = float(self.NEd_input.text())
-
-            model = DijagramInterakcije(fck, k, b, h, d1, d2, MEd, NEd)
+            model = DijagramInterakcije(*self.procitaj_ulaz())
             self.plot_window = PlotWindow(model)
             self.plot_window.show()
 
