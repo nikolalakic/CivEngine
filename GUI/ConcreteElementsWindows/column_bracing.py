@@ -42,11 +42,10 @@ class UtezanjeStuba:
         self.ObimUzg = float(params.get('ObimUzg', 0)) / 100
         self.tip_armature = str(params.get('tip_armature', 'B500B')).upper()
         self.T = float(params.get('T', 0))
-        self.MEd = float(params.get('MEd', 0))
-        self.MRd = float(params.get('MRd', 0))
         self.Hs = float(params.get('Hs', 0))
 
         self.bi_niz = np.array(bi_niz, dtype=float) / 100
+        self.omega_wd_min = 0.08  # EN 1998-1 5.4.3.2.2(9)
 
     def Armatura(self):
         if self.tip_armature == 'B500B':
@@ -58,29 +57,28 @@ class UtezanjeStuba:
         return koeficijent
 
     def Mfi(self):
-        koeficijent = self.Armatura()
-        Tc = 0.5
-        if self.T > Tc:
-            mfi = koeficijent * (2 * self.q0 * self.MEd / self.MRd - 1)
+        """Faktor duktilnosti krivine, EN 1998-1 5.4.3.2.2(6)P i 5.2.3.4(3)-(4).
+
+        Za stubove se koristi osnovna vrednost q0 (zamena q0*MEd/MRd važi samo za zidove).
+        """
+        koeficijent = self.Armatura()  # 1.5 za klasu B, 5.2.3.4(4)
+        if self.T >= self.Tc:
+            mfi = 2 * self.q0 - 1  # izraz (5.4)
         else:
-            mfi = koeficijent * (2 * (self.q0 * self.MEd / self.MRd) - 1) * Tc / self.T + 1
-        if self.MRd >= self.MEd * self.q0:
-            mfi = 1
-        return mfi
+            mfi = 1 + 2 * (self.q0 - 1) * self.Tc / self.T  # izraz (5.5)
+        return koeficijent * mfi
 
     def Utezanje(self):
         rezultati_log = []
         # Međurezultati proračuna (koristi ih generator izveštaja)
-        self.detalji = {'predimenzionisan': self.MRd >= self.MEd * self.q0, 'slucaj': None}
+        self.detalji = {'slucaj': None}
         self.iteracije = []
-        if self.MRd >= self.MEd * self.q0:
-            rezultati_log.append('Presek je predimenzionisan, usvojena je minimalna vrednost mφ = 1')
 
         if self.nied > 0.65:
             self.detalji['slucaj'] = 'prekoracena_sila'
             raise ValueError(
                 f'Normalizovana sila ν,Ed je veća od 0.65! Povećaj marku betona ili dimenzije stuba!\nν,Ed = {self.nied:.3f} >= 0.65')
-        elif self.nied <= 0.2 and self.q0 <= 2:
+        elif self.nied < 0.2 and self.q0 <= 2:  # EN 1998-1 5.4.3.2.2(12)P
             rezultati_log.append('Primenjuju se pravila iz EC2!')
             self.detalji['slucaj'] = 'EC2'
             return "\n".join(rezultati_log)
@@ -110,7 +108,8 @@ class UtezanjeStuba:
                 Vco = self.b0 * self.h0 * p
                 current_omegawdprov = (Vsw * self.fyd) / (Vco * self.fcd)
                 current_alfa_omegawdreq = 30 * mfi * self.nied * self.esyd * self.b / self.b0 - 0.035
-                current_omegawdreq = current_alfa_omegawdreq / current_alfa
+                # EN 1998-1 5.4.3.2.2(8) izraz (5.15) i 5.4.3.2.2(9): najmanje ω_wd = 0.08
+                current_omegawdreq = max(self.omega_wd_min, current_alfa_omegawdreq / current_alfa)
 
                 precnik = math.sqrt(4 * x / math.pi) * 1000
                 self.iteracije.append(dict(
@@ -213,8 +212,6 @@ class Window(QWidget):
         self.precnik_combo.addItems(["φ 8", "φ 10", "φ 12"])
 
         self.T_input = QLineEdit()
-        self.MEd_input = QLineEdit("1")
-        self.MRd_input = QLineEdit("1")
         self.Hs_input = QLineEdit("3.0")
 
 
@@ -228,8 +225,6 @@ class Window(QWidget):
         self.ulazni_podaci_layout.addRow("Tip armature:", self.tip_armature_combo)
         self.ulazni_podaci_layout.addRow("Prečnik uzengija (φ):", self.precnik_combo)
         self.ulazni_podaci_layout.addRow("Period T [s]:", self.T_input)
-        self.ulazni_podaci_layout.addRow("Seizmički moment MEd [kNm]:", self.MEd_input)
-        self.ulazni_podaci_layout.addRow("Moment nosivosti MRd [kNm]:", self.MRd_input)
         self.ulazni_podaci_layout.addRow("Spratna visina Hs [m]:", self.Hs_input)
 
         self.calc_button = QPushButton("Izračunaj utezanje")
@@ -333,8 +328,6 @@ class Window(QWidget):
             'tip_armature': self.tip_armature_combo.currentText(),
             'precnik_uzengije': self.precnik_combo.currentText(),
             'T': float(self.T_input.text()),
-            'MEd': float(self.MEd_input.text()),
-            'MRd': float(self.MRd_input.text()),
             'Hs': float(self.Hs_input.text())
         }
 

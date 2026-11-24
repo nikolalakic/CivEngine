@@ -55,6 +55,7 @@ class UtezanjeZida:
         self.MEd = float(params.get('MEd', 1))
         self.MRd = float(params.get('MRd', 1))
         self.Hs = float(params.get('Hs', 3.0))
+        self.Tc = 0.5  # [s] preporučeni spektar tipa 1, tlo B (EN 1998-1 Tabela 3.2)
 
         self.bi_niz = np.array(bi_niz, dtype=float) / 100  # [m]
 
@@ -67,16 +68,19 @@ class UtezanjeZida:
             raise ValueError('Tip armature mora biti B500B ili B500C.')
         return koeficijent
 
+    def q0_prim(self):
+        """EN 1998-1 5.4.3.4.2(2): q0 se zamenjuje sa q0*MEd/MRd (ne manje od 1)."""
+        return max(1.0, self.q0 * self.MEd / self.MRd)
+
     def Mfi(self):
-        koeficijent = self.Armatura()
-        Tc = 0.5
-        if self.T > Tc:
-            mfi = koeficijent * (2 * self.q0 * self.MEd / self.MRd - 1)
+        """Faktor duktilnosti krivine, EN 1998-1 5.4.3.4.2(2) i 5.2.3.4(3)-(4)."""
+        koeficijent = self.Armatura()  # 1.5 za klasu B, 5.2.3.4(4)
+        q0p = self.q0_prim()
+        if self.T >= self.Tc:
+            mfi = 2 * q0p - 1  # izraz (5.4)
         else:
-            mfi = koeficijent * (2 * (self.q0 * self.MEd / self.MRd) - 1) * Tc / self.T + 1
-        if self.MRd >= self.MEd * self.q0:
-            mfi = 1.0
-        return mfi
+            mfi = 1 + 2 * (q0p - 1) * self.Tc / self.T  # izraz (5.5)
+        return koeficijent * mfi
 
     def Alfa_n(self):
         suma = 0
@@ -109,11 +113,18 @@ class UtezanjeZida:
             lc_mreq = max(0.15 * self.h, 1.5 * self.b)
         return lc_mreq
 
+    def Minimalna_debljina(self):
+        """EN 1998-1 5.4.3.4.2(10): bw >= 200 mm; bw >= hs/15 ako dužina utegnutog dela nije veća
+        od max(2bw, 0.2lw), odnosno bw >= hs/10 ako jeste. Vraća (bw_min, delilac 10 ili 15)."""
+        delilac = 10 if self.h_0 > max(2 * self.b, 0.2 * self.h) else 15
+        return max(0.20, self.Hs / delilac), delilac
+
     def Kontrola_minimalne_debljine_utegnutog_elementa(self):
-        if self.h_0 >= max(self.b, 0.2 * self.h):
-            a = f'Prema članu 5.4.3.4.2 (10) Evrokoda 8 minimalna debljina utegnutog elementa je: b0,min = Hs/10 = {round(self.Hs / 10, 2) * 100} [cm]'
-        else:
-            a = f'Prema članu 5.4.3.4.2 (10) Evrokoda 8 minimalna debljina utegnutog elementa je: b0,min = Hs/15 = {round(self.Hs / 15, 2) * 100} [cm]'
+        bw_min, delilac = self.Minimalna_debljina()
+        a = (f'Prema članu 5.4.3.4.2 (10) Evrokoda 8 minimalna debljina utegnutog elementa je: '
+             f'bw,min = max(20 cm; Hs/{delilac}) = {bw_min * 100:.1f} [cm]')
+        if self.b < bw_min - 1e-9:
+            a += f'\n>>> Debljina zida b = {self.b * 100:.1f} cm je manja od bw,min!'
         return a
 
     def Utezanje(self):
@@ -134,8 +145,8 @@ class UtezanjeZida:
         else:
             rezultati_log.append(f'Potrebno je utezanje krajeva zida za zid {self.naziv_zida}\n')
 
-        if self.MRd >= self.MEd * self.q0:
-            rezultati_log.append('Presek je predimenzionisan, usvojena je minimalna vrednost mφ = 1\n')
+        if self.q0 * self.MEd / self.MRd <= 1:
+            rezultati_log.append('q0·MEd/MRd ≤ 1, usvaja se q0\' = 1\n')
 
         xu = (self.ni + self.omega_v) * self.h * self.b / self.b_0
         alfa_omegad_req = self.alfa_omega_dreq()
@@ -158,14 +169,15 @@ class UtezanjeZida:
         bo_min = self.Kontrola_minimalne_debljine_utegnutog_elementa()
 
         self.detalji.update(
-            slucaj='proracun', predimenzionisan=self.MRd >= self.MEd * self.q0,
+            slucaj='proracun', predimenzionisan=self.q0 * self.MEd / self.MRd <= 1, q0p=self.q0_prim(),
             mfi=self.Mfi(), xu=xu, alfa_omegad_req=alfa_omegad_req, lc_mreq=lc_mreq,
             epsilon_cu2_c=0.0035 + 0.1 * alfa_omegad_req,
             lc_mreq_racunsko=xu * (1 - 0.0035 / (0.0035 + 0.1 * alfa_omegad_req)),
             alfa=alfa, alfa_s=alfa_s, alfa_n=alfa_n, Vco=Vco, Vsw=Vsw, omega_d_prov=omega_d_prov,
             epsilon_cu2c_prov=epsilon_cu2c_prov, lc_req=lc_req, limit_omega=limit_omega,
             dovoljno_omega=omega_d_prov >= limit_omega,
-            b0_min_hs10=self.h_0 >= max(self.b, 0.2 * self.h),
+            b0_min_hs10=self.Minimalna_debljina()[1] == 10, bw_min=self.Minimalna_debljina()[0],
+            debljina_ok=self.b >= self.Minimalna_debljina()[0] - 1e-9,
             dovoljno_utegnut=not (lc_req >= self.h_0))
         rezultati_log.append(bo_min)
 

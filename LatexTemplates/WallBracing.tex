@@ -41,7 +41,14 @@ $M_{Rd}$ & Moment nosivosti & \VAR{m.MRd|n} & kNm \\
 \hline
 $H_s$ & Čista spratna visina & \VAR{m.Hs|n} & m \\
 \hline
+\BLOCK{set pola = (bi|length + 1) // 2}
+\BLOCK{if bi|length > 1}
+%# Razmaci b_i u dva reda tabele (bez linije između), da stanu u širinu stranice
+$b_i$ & Razmaci pridržanih šipki & \VAR{bi[:pola]|map('n', 1)|join(', ')}, & cm \\
+ & & \VAR{bi[pola:]|map('n', 1)|join(', ')} & \\
+\BLOCK{else}
 $b_i$ & Razmaci pridržanih šipki & \VAR{bi|map('n', 1)|join(', ')} & cm \\
+\BLOCK{endif}
 \hline
 \end{tabular}
 \caption{Ulazni parametri zida \VAR{naziv|tex}}
@@ -92,36 +99,32 @@ Kontrola maksimalne normalizovane sile za seizmički zid:
 
 \subsection{Faktor duktilnosti krivine $\mu_\phi$}
 
-Kontrola predimenzionisanosti preseka:
+Prema EN 1998-1, 5.4.3.4.2(2), u izrazima (5.4) i (5.5) iz 5.2.3.4(3) osnovna vrednost $q_0$ se zamenjuje proizvodom $q_0$ i odnosa $M_{Ed}/M_{Rd}$ u dnu zida:
 
 \begin{align*}
-M_{Rd} &\geq q_0 \cdot M_{Ed} \\
-\VAR{m.MRd|n} &\geq \VAR{m.q0|n} \cdot \VAR{m.MEd|n} = \VAR{(m.q0*m.MEd)|n} \quad \VAR{uslov(d.predimenzionisan)}
+q_0 \cdot \frac{M_{Ed}}{M_{Rd}} &= \VAR{m.q0|n} \cdot \frac{\VAR{m.MEd|n}}{\VAR{m.MRd|n}} = \VAR{(m.q0*m.MEd/m.MRd)|n(3)}
 \end{align*}
 
 \BLOCK{if d.predimenzionisan}
-Presek je predimenzionisan, pa se usvaja minimalna vrednost:
-
-\begin{align*}
-\mu_\phi = 1
-\end{align*}
+Kako je ovaj proizvod manji od 1, usvaja se $q_0' = 1$.
 \BLOCK{else}
-Koeficijent za tip armature \VAR{m.tip_armature}: $k = \VAR{k_arm|n(1)}$.
-
-\BLOCK{if m.T > Tc}
-Kako je $T = \VAR{m.T|n} \ \mathrm{s} > T_C = \VAR{Tc|n} \ \mathrm{s}$:
-
-\begin{align*}
-\mu_\phi &= k \cdot \left( 2 \cdot q_0 \cdot \frac{M_{Ed}}{M_{Rd}} - 1 \right) = \VAR{k_arm|n(1)} \cdot \left( 2 \cdot \VAR{m.q0|n} \cdot \frac{\VAR{m.MEd|n}}{\VAR{m.MRd|n}} - 1 \right) = \VAR{d.mfi|n(3)}
-\end{align*}
-\BLOCK{else}
-Kako je $T = \VAR{m.T|n} \ \mathrm{s} \leq T_C = \VAR{Tc|n} \ \mathrm{s}$:
-
-\begin{align*}
-\mu_\phi &= k \cdot \left( 2 \cdot q_0 \cdot \frac{M_{Ed}}{M_{Rd}} - 1 \right) \cdot \frac{T_C}{T} + 1 \\
-&= \VAR{k_arm|n(1)} \cdot \left( 2 \cdot \VAR{m.q0|n} \cdot \frac{\VAR{m.MEd|n}}{\VAR{m.MRd|n}} - 1 \right) \cdot \frac{\VAR{Tc|n}}{\VAR{m.T|n}} + 1 = \VAR{d.mfi|n(3)}
-\end{align*}
+Usvaja se $q_0' = \VAR{d.q0p|n(3)}$.
 \BLOCK{endif}
+
+Za armaturu \VAR{m.tip_armature} koeficijent prema 5.2.3.4(4) iznosi $k = \VAR{k_arm|n(1)}$.
+
+\BLOCK{if m.T >= Tc}
+Kako je $T_1 = \VAR{m.T|n} \ \mathrm{s} \geq T_C = \VAR{Tc|n} \ \mathrm{s}$, izraz (5.4):
+
+\begin{align*}
+\mu_\phi &= k \cdot (2 \cdot q_0' - 1) = \VAR{k_arm|n(1)} \cdot (2 \cdot \VAR{d.q0p|n(3)} - 1) = \VAR{d.mfi|n(3)}
+\end{align*}
+\BLOCK{else}
+Kako je $T_1 = \VAR{m.T|n} \ \mathrm{s} < T_C = \VAR{Tc|n} \ \mathrm{s}$, izraz (5.5):
+
+\begin{align*}
+\mu_\phi &= k \cdot \left( 1 + 2 \cdot (q_0' - 1) \cdot \frac{T_C}{T_1} \right) = \VAR{k_arm|n(1)} \cdot \left( 1 + 2 \cdot (\VAR{d.q0p|n(3)} - 1) \cdot \frac{\VAR{Tc|n}}{\VAR{m.T|n}} \right) = \VAR{d.mfi|n(3)}
+\end{align*}
 \BLOCK{endif}
 
 \subsection{Visina pritisnute zone i potreban procenat utezanja}
@@ -192,26 +195,38 @@ l_c &< h_0 \\
 
 \subsection{Minimalna debljina utegnutog elementa}
 
-Prema članu 5.4.3.4.2 (10) Evrokoda 8:
+Prema EN 1998-1, 5.4.3.4.2(10), debljina $b_w$ utegnutog dela mora biti najmanje 20 cm, a u zavisnosti od dužine utegnutog dela:
 
 \begin{align*}
-h_0 &\geq \max(b;\ 0.2 \cdot h) = \max(\VAR{(m.b*100)|n(1)};\ \VAR{(0.2*m.h*100)|n(1)}) \quad \VAR{uslov(d.b0_min_hs10)}
+h_0 &> \max(2 \cdot b_w;\ 0.2 \cdot l_w) = \max(\VAR{(2*m.b*100)|n(1)};\ \VAR{(0.2*m.h*100)|n(1)}) \\
+\VAR{(m.h_0*100)|n(1)} &> \VAR{([2*m.b, 0.2*m.h]|max*100)|n(1)} \quad \VAR{uslov(d.b0_min_hs10)}
 \end{align*}
 
 \BLOCK{if d.b0_min_hs10}
 \begin{align*}
-b_{0,min} &= \frac{H_s}{10} = \frac{\VAR{m.Hs|n}}{10} = \VAR{(m.Hs/10*100)|n(1)} \ \mathrm{cm}
+b_{w,min} &= \max\left(20;\ \frac{H_s}{10}\right) = \max\left(20;\ \frac{\VAR{(m.Hs*100)|n(1)}}{10}\right) = \VAR{(d.bw_min*100)|n(1)} \ \mathrm{cm}
 \end{align*}
 \BLOCK{else}
 \begin{align*}
-b_{0,min} &= \frac{H_s}{15} = \frac{\VAR{m.Hs|n}}{15} = \VAR{(m.Hs/15*100)|n(1)} \ \mathrm{cm}
+b_{w,min} &= \max\left(20;\ \frac{H_s}{15}\right) = \max\left(20;\ \frac{\VAR{(m.Hs*100)|n(1)}}{15}\right) = \VAR{(d.bw_min*100)|n(1)} \ \mathrm{cm}
 \end{align*}
 \BLOCK{endif}
+
+Kontrola debljine:
+
+\begin{align*}
+b_w &\geq b_{w,min} \\
+\VAR{(m.b*100)|n(1)} &\geq \VAR{(d.bw_min*100)|n(1)} \quad \VAR{kontrola(d.debljina_ok)}
+\end{align*}
 
 \subsection{Zaključak}
 
 \BLOCK{if not d.dovoljno_omega}
 Nije obezbeđen dovoljan procenat utezanja ivičnog elementa ($\omega_{wd,prov} = \VAR{d.omega_d_prov|n(4)} < \omega_{wd,req} = \VAR{d.limit_omega|n(4)}$).
+
+\BLOCK{endif}
+\BLOCK{if not d.debljina_ok}
+\textbf{Debljina zida $b_w = \VAR{(m.b*100)|n(1)}$ cm je manja od potrebne $b_{w,min} = \VAR{(d.bw_min*100)|n(1)}$ cm.}
 
 \BLOCK{endif}
 \BLOCK{if d.dovoljno_utegnut}

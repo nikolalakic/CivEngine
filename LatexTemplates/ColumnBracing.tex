@@ -31,11 +31,14 @@ $\phi_w$ & Prečnik uzengija & \VAR{precnik} & mm \\
 \hline
 $T$ & Period oscilovanja & \VAR{m.T|n} & s \\
 \hline
-$M_{Ed}$ & Seizmički moment & \VAR{m.MEd|n} & kNm \\
-\hline
-$M_{Rd}$ & Moment nosivosti & \VAR{m.MRd|n} & kNm \\
-\hline
+\BLOCK{set pola = (bi|length + 1) // 2}
+\BLOCK{if bi|length > 1}
+%# Razmaci b_i u dva reda tabele (bez linije između), da stanu u širinu stranice
+$b_i$ & Razmaci pridržanih šipki & \VAR{bi[:pola]|map('n', 1)|join(', ')}, & cm \\
+ & & \VAR{bi[pola:]|map('n', 1)|join(', ')} & \\
+\BLOCK{else}
 $b_i$ & Razmaci pridržanih šipki & \VAR{bi|map('n', 1)|join(', ')} & cm \\
+\BLOCK{endif}
 \hline
 \end{tabular}
 \caption{Ulazni parametri stuba \VAR{naziv|tex}}
@@ -74,43 +77,28 @@ Kontrola maksimalne normalizovane sile:
 \BLOCK{if d.slucaj == 'prekoracena_sila'}
 \textbf{Zaključak:} normalizovana sila je veća od dozvoljene. Potrebno je povećati marku betona ili dimenzije stuba; dalji proračun utezanja se ne sprovodi.
 \BLOCK{elif d.slucaj == 'EC2'}
-Kako je $\nu_{Ed} = \VAR{m.nied|n(3)} \leq 0.2$ i $q_0 = \VAR{m.q0|n} \leq 2$:
+Kako je $\nu_{Ed} = \VAR{m.nied|n(3)} < 0.2$ i $q_0 = \VAR{m.q0|n} \leq 2$ (EN 1998-1, 5.4.3.2.2(12)P):
 
 \textbf{Zaključak:} utezanje se ne proračunava, primenjuju se konstruktivna pravila iz EC2.
 \BLOCK{else}
 
 \subsection{Faktor duktilnosti krivine $\mu_\phi$}
 
-Kontrola predimenzionisanosti preseka:
+Prema EN 1998-1, 5.4.3.2.2(6)P i 5.2.3.4(3), sa osnovnom vrednošću faktora ponašanja $q_0$.
+Za armaturu \VAR{m.tip_armature} koeficijent prema 5.2.3.4(4) iznosi $k = \VAR{k_arm|n(1)}$.
+
+\BLOCK{if m.T >= m.Tc}
+Kako je $T_1 = \VAR{m.T|n} \ \mathrm{s} \geq T_C = \VAR{m.Tc|n} \ \mathrm{s}$, izraz (5.4):
 
 \begin{align*}
-M_{Rd} &\geq q_0 \cdot M_{Ed} \\
-\VAR{m.MRd|n} &\geq \VAR{m.q0|n} \cdot \VAR{m.MEd|n} = \VAR{(m.q0*m.MEd)|n} \quad \VAR{uslov(d.predimenzionisan)}
-\end{align*}
-
-\BLOCK{if d.predimenzionisan}
-Presek je predimenzionisan, pa se usvaja minimalna vrednost:
-
-\begin{align*}
-\mu_\phi = 1
+\mu_\phi &= k \cdot (2 \cdot q_0 - 1) = \VAR{k_arm|n(1)} \cdot (2 \cdot \VAR{m.q0|n} - 1) = \VAR{d.mfi|n(3)}
 \end{align*}
 \BLOCK{else}
-Koeficijent za tip armature \VAR{m.tip_armature}: $k = \VAR{k_arm|n(1)}$.
-
-\BLOCK{if m.T > m.Tc}
-Kako je $T = \VAR{m.T|n} \ \mathrm{s} > T_C = \VAR{m.Tc|n} \ \mathrm{s}$:
+Kako je $T_1 = \VAR{m.T|n} \ \mathrm{s} < T_C = \VAR{m.Tc|n} \ \mathrm{s}$, izraz (5.5):
 
 \begin{align*}
-\mu_\phi &= k \cdot \left( 2 \cdot q_0 \cdot \frac{M_{Ed}}{M_{Rd}} - 1 \right) = \VAR{k_arm|n(1)} \cdot \left( 2 \cdot \VAR{m.q0|n} \cdot \frac{\VAR{m.MEd|n}}{\VAR{m.MRd|n}} - 1 \right) = \VAR{d.mfi|n(3)}
+\mu_\phi &= k \cdot \left( 1 + 2 \cdot (q_0 - 1) \cdot \frac{T_C}{T_1} \right) = \VAR{k_arm|n(1)} \cdot \left( 1 + 2 \cdot (\VAR{m.q0|n} - 1) \cdot \frac{\VAR{m.Tc|n}}{\VAR{m.T|n}} \right) = \VAR{d.mfi|n(3)}
 \end{align*}
-\BLOCK{else}
-Kako je $T = \VAR{m.T|n} \ \mathrm{s} \leq T_C = \VAR{m.Tc|n} \ \mathrm{s}$:
-
-\begin{align*}
-\mu_\phi &= k \cdot \left( 2 \cdot q_0 \cdot \frac{M_{Ed}}{M_{Rd}} - 1 \right) \cdot \frac{T_C}{T} + 1 \\
-&= \VAR{k_arm|n(1)} \cdot \left( 2 \cdot \VAR{m.q0|n} \cdot \frac{\VAR{m.MEd|n}}{\VAR{m.MRd|n}} - 1 \right) \cdot \frac{\VAR{m.Tc|n}}{\VAR{m.T|n}} + 1 = \VAR{d.mfi|n(3)}
-\end{align*}
-\BLOCK{endif}
 \BLOCK{endif}
 
 \subsection{Koeficijent efikasnosti utezanja u preseku $\alpha_n$}
@@ -133,7 +121,7 @@ Za svaki razmak uzengija $s$ (redom 20, 15, 12.5, 10 i 7.5 cm) proverava se uslo
 \alpha_s &= \left(1 - \frac{s}{2 \cdot b_0}\right) \cdot \left(1 - \frac{s}{2 \cdot h_0}\right), \qquad \alpha = \alpha_n \cdot \alpha_s \\
 \omega_{wd,prov} &= \frac{V_{sw} \cdot f_{yd}}{b_0 \cdot h_0 \cdot s \cdot f_{cd}} \\
 \alpha \cdot \omega_{wd,req} &= 30 \cdot \mu_\phi \cdot \nu_{Ed} \cdot \varepsilon_{sy,d} \cdot \frac{b}{b_0} - 0.035 = 30 \cdot \VAR{d.mfi|n(3)} \cdot \VAR{m.nied|n(3)} \cdot \VAR{m.esyd|n(6)} \cdot \frac{\VAR{(m.b*100)|n(1)}}{\VAR{(m.b0*100)|n(1)}} - 0.035 = \VAR{iteracije[0].alfa_omegawdreq|n(4)} \\
-\omega_{wd,req} &= \frac{\alpha \cdot \omega_{wd,req}}{\alpha}
+\omega_{wd,req} &= \max\left(0.08;\ \frac{\alpha \cdot \omega_{wd,req}}{\alpha}\right) \quad \text{(EN 1998-1, 5.4.3.2.2(9))}
 \end{align*}
 
 \begin{table}[H]
@@ -161,7 +149,7 @@ Ni najmanji razmak ne zadovoljava; prikaz za $s = \VAR{(it.s*100)|n(1)} \ \mathr
 \alpha_s &= \left(1 - \frac{\VAR{(it.s*100)|n(1)}}{2 \cdot \VAR{(m.b0*100)|n(1)}}\right) \cdot \left(1 - \frac{\VAR{(it.s*100)|n(1)}}{2 \cdot \VAR{(m.h0*100)|n(1)}}\right) = \VAR{it.alfas|n(4)} \\
 \alpha &= \alpha_n \cdot \alpha_s = \VAR{d.alfan|n(4)} \cdot \VAR{it.alfas|n(4)} = \VAR{it.alfa|n(4)} \\
 \omega_{wd,prov} &= \frac{\VAR{(d.Vsw*1e6)|n(2)} \cdot \VAR{(m.fyd/1000)|n}}{\VAR{(m.b0*100)|n(1)} \cdot \VAR{(m.h0*100)|n(1)} \cdot \VAR{(it.s*100)|n(1)} \cdot \VAR{(m.fcd/1000)|n}} = \VAR{it.omegawdprov|n(4)} \\
-\omega_{wd,req} &= \frac{\VAR{it.alfa_omegawdreq|n(4)}}{\VAR{it.alfa|n(4)}} = \VAR{it.omegawdreq|n(4)}
+\omega_{wd,req} &= \max\left(0.08;\ \frac{\VAR{it.alfa_omegawdreq|n(4)}}{\VAR{it.alfa|n(4)}}\right) = \VAR{it.omegawdreq|n(4)}
 \end{align*}
 
 Kontrola utezanja:
