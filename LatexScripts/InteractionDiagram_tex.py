@@ -50,6 +50,13 @@ class InteractionDiagramTex(DijagramInterakcije, LatexReport):
 
         dijagram = f'dijagram.{ext}'
         fig = Figure(figsize=(9, 7))
-        self.stampa_na_osi(fig.add_subplot(111))
+        ax = fig.add_subplot(111)
+        self.stampa_na_osi(ax)
+        if ext == 'pdf':
+            # PDF bez providnosti: pojedini čitači (npr. Master PDF Editor) pogrešno
+            # primenjuju stanja providnosti (/CA, /ca), pa se linije grafika ne vide.
+            fig.patch.set_visible(False)
+            ax.patch.set_visible(False)
+            ax.get_legend().get_frame().set_alpha(1)
         fig.savefig(os.path.join(out_dir, dijagram), bbox_inches='tight', dpi=200)
         return {'presek': presek, 'dijagram': dijagram}
