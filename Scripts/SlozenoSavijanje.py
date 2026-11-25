@@ -127,7 +127,11 @@ def uticajiarmatura(MEd, NEd):
         a = -0.33696*b*math.pow(d, 2)*fcd*math.pow(10, 3) 
         be = 0.81*b*math.pow(d, 2)*fcd*math.pow(10, 3)
         c = -MEdu
-        disk = abs(math.pow(be, 2)-4*a*c)
+        disk = math.pow(be, 2)-4*a*c
+        if disk < 0:
+            # Nema realnog resenja: jednostruko armiran presek ne moze da primi MEdu
+            dvojnoarmiranje(0, MEdu, d, d1)
+            return
         ksi = ((-be+math.pow(disk, 0.5))/(2*a))
         es1 = (1-ksi)/(ksi)*ec2
         As1 = 0.81*ksi*fcd/fyd*b*d*math.pow(10, 4) - (NEd/(fyd*1000))*10000 
