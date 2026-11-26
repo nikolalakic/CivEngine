@@ -1,130 +1,298 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame
-from GUI.ConcreteElementsWindows import column_bracing, interaction_diagram, wall_bracing, capacity_moment
+"""Glavni prozor: bočni meni sa kategorijama i kartice proračuna.
+
+Novi proračun se dodaje jednim unosom u listu PRORACUNI (kategorija, grupa,
+naziv, opis, modul sa klasom Window i, po želji, crtež za sličicu kartice).
+Nova kategorija se dodaje u KATEGORIJE.
+"""
+import importlib
+
+from PyQt6.QtCore import Qt, QRectF, QSize
+from PyQt6.QtGui import QPainter, QPixmap, QPalette
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel,
+                             QListWidget, QListWidgetItem, QStackedWidget, QScrollArea, QLineEdit,
+                             QFrame, QSizePolicy)
+
+from GUI.ConcreteElementsWindows import section_drawings as crtezi
+
+
+KATEGORIJE = ['Beton', 'Čelik']
+
+PRORACUNI = [
+    dict(kategorija='Beton', grupa='Dimenzionisanje preseka (EN 1992-1-1)',
+         naziv='Moment nosivosti preseka',
+         opis='Nosivost pravougaonog ili T-preseka sa zadatom armaturom.',
+         modul='GUI.ConcreteElementsWindows.capacity_moment', slika=crtezi.InteractionDiagramDrawing),
+    dict(kategorija='Beton', grupa='Dimenzionisanje preseka (EN 1992-1-1)',
+         naziv='Složeno savijanje',
+         opis='Potrebna armatura za moment i aksijalnu silu.',
+         modul='GUI.ConcreteElementsWindows.composite_bending', slika=crtezi.CompositeBendingDrawing),
+    dict(kategorija='Beton', grupa='Dimenzionisanje preseka (EN 1992-1-1)',
+         naziv='Smicanje',
+         opis='Potrebne uzengije za silu smicanja VEd.',
+         modul='GUI.ConcreteElementsWindows.shear', slika=crtezi.ShearDrawing),
+    dict(kategorija='Beton', grupa='Dimenzionisanje preseka (EN 1992-1-1)',
+         naziv='Dijagram interakcije',
+         opis='M–N dijagram interakcije pravougaonog preseka.',
+         modul='GUI.ConcreteElementsWindows.interaction_diagram', slika=crtezi.InteractionCurveDrawing),
+    dict(kategorija='Beton', grupa='Seizmičko utezanje (EN 1998-1)',
+         naziv='Utezanje stuba',
+         opis='Kontrola utezanja kritične oblasti stuba uzengijama.',
+         modul='GUI.ConcreteElementsWindows.column_bracing', slika=crtezi.ColumnBracingDrawing),
+    dict(kategorija='Beton', grupa='Seizmičko utezanje (EN 1998-1)',
+         naziv='Utezanje zida',
+         opis='Kontrola utezanja krajeva duktilnog zida.',
+         modul='GUI.ConcreteElementsWindows.wall_bracing', slika=crtezi.WallBracingDrawing),
+]
+
+
+def slicica(klasa, sirina, visina, boja):
+    """Crtež preseka iscrtan u pixmap (bez okvira), za karticu."""
+    pix = QPixmap(sirina, visina)
+    pix.fill(Qt.GlobalColor.transparent)
+    crtez = klasa(1, 1)
+    crtez.fg = boja
+    p = QPainter(pix)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    p.setRenderHint(QPainter.RenderHint.TextAntialiasing)
+    crtez._paint_logical(p, QRectF(0, 0, sirina, visina))
+    p.end()
+    crtez.deleteLater()
+    return pix
+
+
+class Kartica(QPushButton):
+    """Kartica proračuna: sličica, naziv i kratak opis."""
+
+    SIRINA, VISINA = 220, 250
+
+    def __init__(self, proracun, parent=None):
+        super().__init__(parent)
+        self.proracun = proracun
+        self.setFixedSize(self.SIRINA, self.VISINA)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip(proracun['opis'])
+        self.setObjectName('kartica')
+        self.setStyleSheet("""
+            QPushButton#kartica {
+                border: 1px solid palette(mid);
+                border-radius: 10px;
+                background-color: palette(base);
+            }
+            QPushButton#kartica:hover, QPushButton#kartica:focus {
+                border: 2px solid palette(highlight);
+            }
+            QPushButton#kartica:pressed {
+                background-color: palette(alternate-base);
+            }
+        """)
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(12, 12, 12, 12)
+        lay.setSpacing(6)
+
+        slika = QLabel()
+        slika.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if proracun.get('slika'):
+            boja = self.palette().color(QPalette.ColorRole.Text)
+            dpr = self.devicePixelRatioF()
+            pix = slicica(proracun['slika'], round(190 * dpr), round(108 * dpr), boja)
+            pix.setDevicePixelRatio(dpr)
+            slika.setPixmap(pix)
+        slika.setFixedHeight(112)
+
+        naziv = QLabel(proracun['naziv'])
+        naziv.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        naziv.setWordWrap(True)
+        naziv.setFixedHeight(44)   # mesta za naziv u dva reda
+        naziv.setStyleSheet('font-size: 15px; font-weight: bold; background: transparent;')
+
+        opis = QLabel(proracun['opis'])
+        opis.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        opis.setWordWrap(True)
+        opis.setStyleSheet('font-size: 12px; color: palette(placeholder-text); background: transparent;')
+
+        for w in (slika, naziv, opis):
+            w.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+            lay.addWidget(w)
+        lay.addStretch()
+
+    def odgovara(self, tekst):
+        tekst = tekst.lower()
+        p = self.proracun
+        return not tekst or any(tekst in p[k].lower() for k in ('naziv', 'opis', 'grupa'))
+
+
+class StranaKategorije(QScrollArea):
+    """Kartice jedne kategorije, grupisane; broj kolona prati širinu prozora."""
+
+    RAZMAK = 14
+
+    def __init__(self, proracuni, otvori, parent=None):
+        super().__init__(parent)
+        self.setWidgetResizable(True)
+        self.setFrameShape(QFrame.Shape.NoFrame)
+
+        sadrzaj = QWidget()
+        self.lay = QVBoxLayout(sadrzaj)
+        self.lay.setContentsMargins(4, 4, 4, 4)
+        self.lay.setSpacing(10)
+        self.setWidget(sadrzaj)
+
+        self.grupe = []   # (naslov, grid, [kartice])
+        for grupa in dict.fromkeys(p['grupa'] for p in proracuni):
+            naslov = QLabel(grupa)
+            naslov.setStyleSheet('font-size: 16px; font-weight: bold; padding-top: 6px;')
+            grid = QGridLayout()
+            grid.setSpacing(self.RAZMAK)
+            grid.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+            kartice = []
+            for p in proracuni:
+                if p['grupa'] == grupa:
+                    k = Kartica(p)
+                    k.clicked.connect(lambda _, p=p: otvori(p))
+                    kartice.append(k)
+            self.lay.addWidget(naslov)
+            self.lay.addLayout(grid)
+            self.grupe.append((naslov, grid, kartice))
+
+        self.prazno = QLabel('Nema proračuna u ovoj kategoriji.' if not proracuni
+                             else 'Nijedan proračun ne odgovara pretrazi.')
+        self.prazno.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.prazno.setStyleSheet('font-size: 14px; color: palette(placeholder-text); padding: 40px;')
+        self.lay.addWidget(self.prazno)
+        self.lay.addStretch()
+
+        self._kolone = 0
+        self._filter = ''
+        self.rasporedi()
+
+    def _broj_kolona(self):
+        sirina = self.viewport().width() - 8
+        return max(1, (sirina + self.RAZMAK) // (Kartica.SIRINA + self.RAZMAK))
+
+    def rasporedi(self, sila=True):
+        kolone = self._broj_kolona()
+        if not sila and kolone == self._kolone:
+            return
+        self._kolone = kolone
+        ukupno = 0
+        for naslov, grid, kartice in self.grupe:
+            for k in kartice:
+                grid.removeWidget(k)
+            vidljive = [k for k in kartice if k.odgovara(self._filter)]
+            for k in kartice:
+                k.setVisible(k in vidljive)
+            for i, k in enumerate(vidljive):
+                grid.addWidget(k, i // kolone, i % kolone)
+            naslov.setVisible(bool(vidljive))
+            ukupno += len(vidljive)
+        self.prazno.setVisible(ukupno == 0)
+        return ukupno
+
+    def filtriraj(self, tekst):
+        self._filter = tekst.strip()
+        return self.rasporedi()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.rasporedi(sila=False)
 
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("CivEngine")
-        self.setFixedSize(900, 600)
+        self.setWindowTitle('CivEngine')
+        self.setMinimumSize(720, 520)
+        self.resize(1000, 720)
+        self.prozori = {}
 
+        glavni = QHBoxLayout(self)
+        glavni.setContentsMargins(0, 0, 0, 0)
+        glavni.setSpacing(0)
 
-        # Okviri za layout-ove
+        # --- Bočni meni ---------------------------------------------------
+        bocni = QFrame()
+        bocni.setObjectName('bocni')
+        bocni.setFixedWidth(190)
+        bocni.setStyleSheet('QFrame#bocni { background-color: palette(alternate-base); '
+                            'border-right: 1px solid palette(mid); }')
+        bl = QVBoxLayout(bocni)
+        bl.setContentsMargins(10, 16, 10, 12)
 
-        self.beton_frame = QFrame()
-        self.beton_frame.setStyleSheet("""
-                    QFrame {
-                        border: 2px solid gray;
-                        border-radius: 8px;
-                        background-color: palette(window);
-                    }
-                """)
+        logo = QLabel('CivEngine')
+        logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        logo.setStyleSheet('font-size: 22px; font-weight: bold; padding-bottom: 12px;')
+        bl.addWidget(logo)
 
-        self.celik_frame = QFrame()
-        self.celik_frame.setStyleSheet("""
-                    QFrame {
-                        border: 2px solid gray;
-                        border-radius: 8px;
-                        background-color: palette(window);
-                    }
-                """)
+        self.meni = QListWidget()
+        self.meni.setFrameShape(QFrame.Shape.NoFrame)
+        self.meni.setStyleSheet("""
+            QListWidget { background: transparent; font-size: 15px; outline: none; }
+            QListWidget::item { padding: 10px 12px; border-radius: 6px; margin: 1px 0; }
+            QListWidget::item:selected { background-color: palette(highlight);
+                                         color: palette(highlighted-text); }
+            QListWidget::item:hover:!selected { background-color: palette(midlight); }
+        """)
+        bl.addWidget(self.meni)
+        glavni.addWidget(bocni)
 
-        # Definisanje layout-a
+        # --- Desni deo: pretraga i kartice --------------------------------
+        desno = QVBoxLayout()
+        desno.setContentsMargins(20, 16, 12, 12)
+        desno.setSpacing(10)
 
-        self.glavni_layout = QHBoxLayout()
-        self.beton_layout = QVBoxLayout(self.beton_frame)
-        self.celik_layout = QVBoxLayout(self.celik_frame)
+        gore = QHBoxLayout()
+        self.naslov = QLabel()
+        self.naslov.setStyleSheet('font-size: 24px; font-weight: bold;')
+        self.pretraga = QLineEdit()
+        self.pretraga.setPlaceholderText('Pretraga proračuna…')
+        self.pretraga.setClearButtonEnabled(True)
+        self.pretraga.setFixedWidth(260)
+        self.pretraga.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        gore.addWidget(self.naslov)
+        gore.addStretch()
+        gore.addWidget(self.pretraga)
+        desno.addLayout(gore)
 
-        # Razmaci do dugmića
+        self.strane = QStackedWidget()
+        desno.addWidget(self.strane)
+        glavni.addLayout(desno)
 
-        self.beton_layout.setSpacing(5)
-        self.celik_layout.setSpacing(5)
+        for kat in KATEGORIJE:
+            proracuni = [p for p in PRORACUNI if p['kategorija'] == kat]
+            item = QListWidgetItem(kat)
+            item.setData(Qt.ItemDataRole.UserRole, kat)
+            item.setSizeHint(QSize(0, 42))
+            self.meni.addItem(item)
+            self.strane.addWidget(StranaKategorije(proracuni, self.otvori))
 
-        # Naslovi layout-ova
+        self.meni.currentRowChanged.connect(self.promeni_kategoriju)
+        self.pretraga.textChanged.connect(self.pretrazi)
+        self.meni.setCurrentRow(0)
 
-        self.beton_naslov = QLabel("Betonski elementi:")
-        self.celik_naslov = QLabel("Čelični elementi:")
+    def promeni_kategoriju(self, red):
+        if red < 0:
+            return
+        self.strane.setCurrentIndex(red)
+        self.naslov.setText(KATEGORIJE[red])
+        self.strane.currentWidget().rasporedi()
 
-        # Definisanje dugmića
-        self.beton_button1 = QPushButton('Dijagram interakcije')
-        self.beton_button2 = QPushButton('Utezanje stuba')
-        self.beton_button3 = QPushButton('Utezanje zida')
-        self.beton_button4 = QPushButton('Moment nosivosti preseka')
-        self.celik_button1 = QPushButton('todo')
+    def pretrazi(self, tekst):
+        """Filtrira sve kategorije; u meniju prikazuje broj pogodaka."""
+        pogoci = [self.strane.widget(i).filtriraj(tekst) for i in range(self.strane.count())]
+        for i, kat in enumerate(KATEGORIJE):
+            self.meni.item(i).setText(f'{kat}  ({pogoci[i]})' if tekst.strip() else kat)
+        red = self.meni.currentRow()
+        if tekst.strip() and pogoci[red] == 0 and any(pogoci):
+            self.meni.setCurrentRow(next(i for i, n in enumerate(pogoci) if n))
 
-        # Stilovi dugmića i teksta
-        stil_dugmica = ("""
-                        QPushButton {
-                            min-width: 200px; 
-                            min-height: 45px;
-                            font-size: 14px;
-                            text-align: center;
-                                    }
-                                    """)
-
-        stil_naslova = ("""
-                        QLabel {
-                            min-width: 300px; 
-                            min-height: 20px;
-                            font-size: 25px;
-                            qproperty-alignment: 'AlignCenter';
-                                    }
-                                    """)
-
-        self.beton_button1.setStyleSheet(stil_dugmica)
-        self.beton_button2.setStyleSheet(stil_dugmica)
-        self.beton_button3.setStyleSheet(stil_dugmica)
-        self.beton_button4.setStyleSheet(stil_dugmica)
-        self.celik_button1.setStyleSheet(stil_dugmica)
-
-        self.beton_naslov.setStyleSheet(stil_naslova)
-        self.celik_naslov.setStyleSheet(stil_naslova)
-
-        # Dodavanje layout-a
-        self.beton_layout.addWidget(self.beton_naslov)
-        self.beton_layout.addWidget(self.beton_button1)
-        self.beton_layout.addWidget(self.beton_button2)
-        self.beton_layout.addWidget(self.beton_button3)
-        self.beton_layout.addWidget(self.beton_button4)
-        self.celik_layout.addWidget(self.celik_naslov)
-        self.celik_layout.addWidget(self.celik_button1)
-        self.glavni_layout.addWidget(self.beton_frame)
-        self.glavni_layout.addWidget(self.celik_frame)
-
-        self.setLayout(self.glavni_layout)
-
-        # Konekcije za signale
-        self.beton_button1.setCheckable(True)
-        self.beton_button1.clicked.connect(self.interaction_diagram_button_click)
-
-        self.beton_button2.setCheckable(True)
-        self.beton_button2.clicked.connect(self.column_bracing_button_click)
-
-        self.beton_button3.setCheckable(True)
-        self.beton_button3.clicked.connect(self.wall_bracing_button_click)
-
-        self.beton_button4.setCheckable(True)
-        self.beton_button4.clicked.connect(self.capacity_moment_button_click)
-
-    def interaction_diagram_button_click(self):
-        self.interaction_diagram_window = interaction_diagram.Window()
-        self.interaction_diagram_window.show()
-
-    def column_bracing_button_click(self):
-        self.column_bracing_window = column_bracing.Window()
-        self.column_bracing_window.show()
-
-    def wall_bracing_button_click(self):
-        self.wall_bracing_window = wall_bracing.Window()
-        self.wall_bracing_window.show()
-
-    def capacity_moment_button_click(self):
-        self.capacity_moment_window = capacity_moment.Window()
-        self.capacity_moment_window.show()
-
-
-
-
-
-
-
+    def otvori(self, proracun):
+        """Otvara prozor proračuna; ako je već otvoren, vraća ga u prvi plan."""
+        prozor = self.prozori.get(proracun['naziv'])
+        if prozor is None or not prozor.isVisible():
+            prozor = importlib.import_module(proracun['modul']).Window()
+            self.prozori[proracun['naziv']] = prozor
+        prozor.show()
+        prozor.showNormal()
+        prozor.raise_()
+        prozor.activateWindow()

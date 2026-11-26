@@ -370,3 +370,158 @@ class WallBracingDrawing(_SectionDrawing):
         self.vdim(180, [bot[0], bot[-1]], ["h_0"])
         self.hdim(727, [X1, x1, x2, X2], ["4", "b_0", "4"], size=16)
         self.hdim(765, [X1, X2], ["b"])
+
+
+class CompositeBendingDrawing(_SectionDrawing):
+    """Složeno savijanje: T-presek (gore) i pravougaoni presek (dole)."""
+
+    LOGICAL_W = 380
+    LOGICAL_H = 1030
+    FONT_SIZE = 22
+
+    CX = 135          # osa simetrije oba preseka
+    DIM_L = 26        # kota h
+    DIM_R = 262       # kote d2, h-d1-d2, d1
+
+    def _armatura_i_opterecenje(self, x1, x2, y1, y2, d2, d1):
+        cx, cy = self.CX, (y1 + y2) / 2
+        self.hatched_rect(x1, d2 - 8, x2, d2 + 9)
+        self.text(cx, d2 - 8, "As2")
+        self.hatched_rect(x1, d1 - 8, x2, d1 + 9)
+        self.text(cx, d1 - 8, "As1")
+
+        self.circle(cx, cy, 6)
+        self.line(cx + 6, cy, 362, cy)
+        self.text(318, cy, "NEd, MEd", valign="top")
+        self.moment_arc(cx, cy, 62, head=15)
+
+        self.vdim(self.DIM_L, [y1, y2], ["h"])
+        self.vdim(self.DIM_R, [y1, d2, d1, y2], ["d2", "h-d1-d2", "d1"])
+
+    def _t_presek(self, oy):
+        bx1, bx2 = 45, 225          # flanša (b)
+        wx1, wx2 = 100, 170         # rebro (b rebra)
+        y1, yf, y2 = oy + 50, oy + 160, oy + 450
+        self.polygon([(bx1, y1), (bx2, y1), (bx2, yf), (wx2, yf),
+                      (wx2, y2), (wx1, y2), (wx1, yf), (bx1, yf)])
+        self.hdim(oy + 28, [bx1, bx2], ["b_{eff}"])
+        self.hdim(y2 + 25, [wx1, wx2])
+        self.text(self.CX, y2 + 25, "b_{rebra}", valign="top")
+        self._armatura_i_opterecenje(wx1 + 9, wx2 - 9, y1, y2, y1 + 50, y2 - 50)
+
+    def _pravougaoni_presek(self, oy):
+        x1, x2 = 82, 188            # b = b rebra
+        y1, y2 = oy, oy + 400
+        self.box(x1, y1, x2, y2)
+        self.hdim(y2 + 25, [x1, x2])
+        self.text(self.CX, y2 + 25, "b = b_{rebra}", valign="top")
+        self._armatura_i_opterecenje(x1 + 27, x2 - 27, y1, y2, y1 + 80, y2 - 80)
+
+    def draw(self):
+        self._t_presek(0)
+        self._pravougaoni_presek(580)
+
+
+class InteractionCurveDrawing(_SectionDrawing):
+    """Stilizovan dijagram interakcije (sličica kartice u glavnom prozoru).
+
+    Tačke su izračunate modelom DijagramInterakcije za primer:
+    fck = 30 MPa, b/h = 30/50 cm, d1 = d2 = 5 cm, As1 = As2 (k = 50 %).
+    Unutrašnja linija je ω = 0, spoljašnja ω = 0.5; tačke redom odgovaraju
+    stanjima dilatacija 2/2, 3.5/0, 3.5/-2.174, 3.5/-10, 3.5/-20, 3.5/-40 ‰.
+    """
+
+    LOGICAL_W = 380
+    LOGICAL_H = 232
+    FONT_SIZE = 20
+
+    UNUTRASNJA = [(1.0, 0.0), (0.81, 0.068), (0.45, 0.121), (0.189, 0.076), (0.109, 0.048), (0.059, 0.028)]
+    SPOLJASNJA = [(1.5, 0.0), (1.1, 0.152), (0.45, 0.321), (0.169, 0.268), (-0.039, 0.189), (-0.345, 0.066)]
+
+    NI = (-0.45, 1.6)      # opseg ν
+    MI = (0.0, 0.34)       # opseg μ
+    X = (30, 350)
+    Y = (190, 18)
+
+    def _tacka(self, ni, mi):
+        x = self.X[0] + (ni - self.NI[0]) / (self.NI[1] - self.NI[0]) * (self.X[1] - self.X[0])
+        y = self.Y[0] + (mi - self.MI[0]) / (self.MI[1] - self.MI[0]) * (self.Y[1] - self.Y[0])
+        return QPointF(x, y)
+
+    def _kriva(self, tacke):
+        """Glatka kriva kroz tačke (Catmull-Rom spline)."""
+        pts = [self._tacka(*t) for t in tacke]
+        path = QPainterPath(pts[0])
+        for i in range(len(pts) - 1):
+            p0 = pts[i - 1] if i > 0 else pts[i]
+            p1, p2 = pts[i], pts[i + 1]
+            p3 = pts[i + 2] if i + 2 < len(pts) else p2
+            path.cubicTo(p1 + (p2 - p0) / 6, p2 - (p3 - p1) / 6, p2)
+        self._p.setBrush(Qt.BrushStyle.NoBrush)
+        self._p.drawPath(path)
+
+    def draw(self):
+        # Ose ν i μ
+        o = self._tacka(0, 0)
+        self.line(self.X[0] - 10, o.y(), self.X[1] + 18, o.y())
+        self.line(o.x(), o.y() + 8, o.x(), self.Y[1] - 6)
+        h = 7
+        self.line(self.X[1] + 18, o.y(), self.X[1] + 18 - h, o.y() - h * 0.6)
+        self.line(self.X[1] + 18, o.y(), self.X[1] + 18 - h, o.y() + h * 0.6)
+        self.line(o.x(), self.Y[1] - 6, o.x() - h * 0.6, self.Y[1] - 6 + h)
+        self.line(o.x(), self.Y[1] - 6, o.x() + h * 0.6, self.Y[1] - 6 + h)
+        self.text(self.X[1] + 12, o.y() + 4, "ν_{Ed}", valign="top")
+        self.text(o.x() - 22, self.Y[1] + 4, "μ_{Ed}", valign="center")
+
+        self._kriva(self.UNUTRASNJA)
+        self._set_pen(self._pen_w * 2)
+        self._kriva(self.SPOLJASNJA)
+        self._set_pen()
+
+
+class ShearDrawing(_SectionDrawing):
+    """Pravougaoni presek sa uzengijom i silom smicanja VEd iznad preseka."""
+
+    LOGICAL_W = 345
+    LOGICAL_H = 640
+    FONT_SIZE = 22
+
+    def draw(self):
+        x1, x2, y1, y2 = 95, 235, 150, 560
+        cx = (x1 + x2) / 2
+        c = 16                                  # zaštitni sloj do uzengije
+        yd = y2 - 52                            # osa zategnute armature (d1)
+
+        self.box(x1, y1, x2, y2)
+
+        # Uzengija sa kukom
+        self._p.setBrush(Qt.BrushStyle.NoBrush)
+        self._p.drawRoundedRect(QRectF(x1 + c, y1 + c, x2 - x1 - 2 * c, y2 - y1 - 2 * c), 8, 8)
+        bx, by = x1 + c + 12, y1 + c + 12      # šipka u uglu, oko nje se savija kuka
+        self.line(bx + 4, by - 8, bx + 22, by + 10)
+        self.line(bx - 8, by + 4, bx + 10, by + 22)
+
+        # Montažna (gore) i zategnuta podužna armatura Asl (dole)
+        r = 7
+        for x in (x1 + c + 12, x2 - c - 12):
+            self.bar(x, y1 + c + 12, r * 0.8)
+        for x in (x1 + c + 12, cx, x2 - c - 12):
+            self.bar(x, yd, r)
+        self.text(cx, yd - 12, "Asl")
+        self.text(cx, (y1 + y2) / 2, "m, φ", valign="center")
+
+        # Sila smicanja VEd iznad preseka
+        top, tip = 20, y1 - 12
+        self.line(cx, top, cx, tip)
+        h = 14
+        self._p.setBrush(self.fg)
+        from PyQt6.QtGui import QPolygonF
+        self._p.drawPolygon(QPolygonF([QPointF(cx, tip), QPointF(cx - h * 0.5, tip - h),
+                                       QPointF(cx + h * 0.5, tip - h)]))
+        self._p.setBrush(Qt.BrushStyle.NoBrush)
+        self.text(cx + 44, (top + tip) / 2, "VEd", valign="center")
+
+        # Kote
+        self.vdim(48, [y1, y2], ["h"])
+        self.vdim(285, [y1, yd, y2], ["d", "d1"])
+        self.hdim(600, [x1, x2], ["b"])

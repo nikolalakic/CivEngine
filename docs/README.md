@@ -16,6 +16,8 @@ Svaka stranica je organizovana na isti način:
 |---|---|---|
 | Dijagram interakcije | [dijagram_interakcije.md](dijagram_interakcije.md) | [`interaction_diagram.py`](../GUI/ConcreteElementsWindows/interaction_diagram.py) |
 | Moment nosivosti preseka | [moment_nosivosti.md](moment_nosivosti.md) | [`capacity_moment.py`](../GUI/ConcreteElementsWindows/capacity_moment.py) |
+| Složeno savijanje | [slozeno_savijanje.md](slozeno_savijanje.md) | [`composite_bending.py`](../GUI/ConcreteElementsWindows/composite_bending.py) |
+| Smicanje | [smicanje.md](smicanje.md) | [`shear.py`](../GUI/ConcreteElementsWindows/shear.py) |
 | Utezanje stuba | [utezanje_stuba.md](utezanje_stuba.md) | [`column_bracing.py`](../GUI/ConcreteElementsWindows/column_bracing.py) |
 | Utezanje zida | [utezanje_zida.md](utezanje_zida.md) | [`wall_bracing.py`](../GUI/ConcreteElementsWindows/wall_bracing.py) |
 | Izveštaji (PDF / Word / LibreOffice / LaTeX) | [izvestaji.md](izvestaji.md) | [`LatexScripts/`](../LatexScripts) |

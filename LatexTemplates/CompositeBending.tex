@@ -1,0 +1,277 @@
+\BLOCK{include '_preamble.tex'}
+
+\begin{document}
+\maketitle
+
+%% ---- POCETAK PRORACUNA ----
+\subsection{Ulazni parametri}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|l|c|c|}
+\hline
+Oznaka & Opis & Vrednost & Jedinica \\
+\hline
+$M_{Ed}$ & Proračunski moment savijanja & \VAR{m.MEd|n} & kNm \\
+\hline
+$N_{Ed}$ & Proračunska aksijalna sila (pritisak +) & \VAR{m.NEd|n} & kN \\
+\hline
+$b_{eff}$ & Efektivna širina pritisnute zone ($b = b_{eff}$) & \VAR{(m.b*100)|n(1)} & cm \\
+\hline
+$b_w$ & Širina rebra & \VAR{(m.brebra*100)|n(1)} & cm \\
+\hline
+$h$ & Visina preseka & \VAR{(m.h*100)|n(1)} & cm \\
+\hline
+$f_{ck}$ & Karakteristična čvrstoća betona & \VAR{m.fck} & MPa \\
+\hline
+$d_1$ & Položaj zategnute armature & \VAR{(m.d1*100)|n(1)} & cm \\
+\hline
+$d_2$ & Položaj pritisnute armature & \VAR{(m.d2*100)|n(1)} & cm \\
+\hline
+\end{tabular}
+\caption{Ulazni parametri grede \VAR{naziv|tex}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.42\textheight]{\VAR{slike.presek}}
+\caption{Poprečni presek sa oznakama: T-presek (gore) i pravougaoni presek (dole)}
+\end{figure}
+
+\subsection{Materijal i geometrija}
+
+\begin{align*}
+f_{cd} &= \frac{0.85 \cdot f_{ck}}{1.5} = \frac{0.85 \cdot \VAR{m.fck}}{1.5} = \VAR{m.fcd|n} \ \mathrm{MPa}, \qquad f_{ctm} = \VAR{m.fctm|n} \ \mathrm{MPa} \\
+f_{yd} &= \frac{f_{yk}}{1.15} = \frac{\VAR{m.fyk}}{1.15} = \VAR{m.fyd|n} \ \mathrm{MPa}, \qquad E_s = \VAR{m.Es} \ \mathrm{GPa}, \qquad \varepsilon_{yd} = \frac{f_{yd}}{E_s} = \VAR{(m.eslim*1000)|n(3)} \ \text{‰} \\
+d &= h - d_1 = \VAR{(m.h*100)|n(1)} - \VAR{(m.d1*100)|n(1)} = \VAR{(m.d*100)|n(1)} \ \mathrm{cm}
+\end{align*}
+
+\subsection{Izbor proračunskog slučaja}
+
+Naponi na ivicama preseka (linearna raspodela, širina $b$):
+
+\begin{align*}
+\sigma_{1,2} &= \frac{N_{Ed}}{b \cdot h} \mp \frac{6 \cdot M_{Ed}}{b \cdot h^2} = \frac{\VAR{m.NEd|n}}{\VAR{m.b|n(3)} \cdot \VAR{m.h|n(3)}} \mp \frac{6 \cdot \VAR{m.MEd|n}}{\VAR{m.b|n(3)} \cdot \VAR{m.h|n(3)}^2} \\
+\sigma_1 &= \VAR{(m.sigma1/1000)|n(3)} \ \mathrm{MPa}, \qquad \sigma_2 = \VAR{(m.sigma2/1000)|n(3)} \ \mathrm{MPa}
+\end{align*}
+
+Moment u odnosu na težište zategnute armature:
+
+\begin{align*}
+M_{Edu} &= M_{Ed} + N_{Ed} \cdot \left(\frac{h}{2} - d_1\right) = \VAR{m.MEd|n} + \VAR{m.NEd|n} \cdot \left(\frac{\VAR{m.h|n(3)}}{2} - \VAR{m.d1|n(3)}\right) = \VAR{m.MEdu|n} \ \mathrm{kNm}
+\end{align*}
+
+\BLOCK{set prvi = koraci[0][0] if koraci else 'nema'}
+\BLOCK{if prvi == 'centricni'}
+Kako je $M_{Ed} = 0$ i $\sigma_1 > 0$, presek je centrično pritisnut.
+\BLOCK{elif prvi == 'zatezanje'}
+\BLOCK{if m.sigma2 < 0}
+Kako je $\sigma_2 = \VAR{(m.sigma2/1000)|n(3)} < 0$, ceo presek je zategnut (centrično ili ekscentrično zatezanje sa malim ekscentricitetom).
+\BLOCK{else}
+Kako je $N_{Ed} < 0$ i $M_{Edu} = \VAR{m.MEdu|n} \leq 0$, sila zatezanja deluje između armatura (ili u težištu armature $A_{s1}$), pa se raspodeljuje po pravilu poluge.
+\BLOCK{endif}
+\BLOCK{elif prvi == 'mali'}
+Kako je $\sigma_1 = \VAR{(m.sigma1/1000)|n(3)} \geq 0$, ceo presek je pritisnut (mali ekscentricitet).
+\BLOCK{elif prvi == 'veliki'}
+Kako je $\sigma_1 = \VAR{(m.sigma1/1000)|n(3)} < 0$ i $\sigma_2 = \VAR{(m.sigma2/1000)|n(3)} > 0$, presek je delimično pritisnut (veliki ekscentricitet).
+\BLOCK{else}
+Presek nije opterećen ($M_{Ed} = 0$, $N_{Ed} = 0$), pa se proračun ne sprovodi.
+\BLOCK{endif}
+
+\BLOCK{for ime, k in koraci}
+\BLOCK{if ime == 'centricni'}
+\subsection{Centrični pritisak}
+
+\begin{align*}
+\sigma_c &= \frac{N_{Ed}}{A_c} = \frac{\VAR{m.NEd|n}}{\VAR{k.Ac|n(4)} \cdot 10^3} = \VAR{k.napon_beton|n} \ \mathrm{MPa} \\
+\sigma_c &\leq f_{cd} \\
+\VAR{k.napon_beton|n} &\leq \VAR{m.fcd|n} \quad \VAR{kontrola(k.napon_beton <= m.fcd)}
+\end{align*}
+
+\BLOCK{if k.napon_beton <= m.fcd}
+Potrebna armatura (najveća od: $0.15 \cdot N_{Ed}/f_{yd}$, $0.3\%$ površine preseka i $4\phi 12$):
+
+\begin{align*}
+A_s &= \max\left(0.15 \cdot \frac{N_{Ed}}{f_{yd}};\ 0.003 \cdot A_c;\ 4.52\right) = \max\left(\VAR{(0.15*m.NEd/m.fyd*10)|n};\ \VAR{(0.003*k.Ac*1e4)|n};\ 4.52\right) = \VAR{k.As|n} \ \mathrm{cm^2}
+\end{align*}
+\BLOCK{endif}
+
+\BLOCK{elif ime == 'zatezanje'}
+\subsection{Zatezanje}
+
+\begin{align*}
+N &= |N_{Ed}| = \VAR{k.N|n} \ \mathrm{kN}, \qquad e = \frac{M_{Ed}}{N} = \frac{\VAR{m.MEd|n}}{\VAR{k.N|n}} = \VAR{(k.e*100)|n(2)} \ \mathrm{cm}
+\end{align*}
+
+\BLOCK{if k.e != 0}
+Sila deluje između armatura, pa se raspodeljuje na obe armature po pravilu poluge:
+
+\begin{align*}
+c_1 &= \frac{h}{2} - d_1 = \VAR{(k.c1*100)|n(2)} \ \mathrm{cm}, \qquad c_2 = \frac{h}{2} - d_2 = \VAR{(k.c2*100)|n(2)} \ \mathrm{cm} \\
+A_{s1} &= \frac{N}{f_{yd}} \cdot \frac{c_2 + e}{c_1 + c_2} = \frac{\VAR{k.N|n}}{\VAR{m.fyd|n} \cdot 10^{-1}} \cdot \frac{\VAR{(k.c2*100)|n(2)} + \VAR{(k.e*100)|n(2)}}{\VAR{(k.c1*100)|n(2)} + \VAR{(k.c2*100)|n(2)}} = \VAR{k.As1|n} \ \mathrm{cm^2} \\
+A_{s2} &= \frac{N}{f_{yd}} \cdot \frac{c_2 - e}{c_1 + c_2} = \frac{\VAR{k.N|n}}{\VAR{m.fyd|n} \cdot 10^{-1}} \cdot \frac{\VAR{(k.c2*100)|n(2)} - \VAR{(k.e*100)|n(2)}}{\VAR{(k.c1*100)|n(2)} + \VAR{(k.c2*100)|n(2)}} = \VAR{k.As2|n} \ \mathrm{cm^2}
+\end{align*}
+\BLOCK{else}
+\begin{align*}
+A_s &= \frac{N}{f_{yd}} = \frac{\VAR{k.N|n}}{\VAR{m.fyd|n} \cdot 10^{-1}} = \VAR{k.As|n} \ \mathrm{cm^2}
+\end{align*}
+\BLOCK{endif}
+
+\BLOCK{elif ime == 'veliki'}
+\subsection{Veliki ekscentricitet --- jednostruko armiran presek}
+
+Iz uslova ravnoteže momenata oko težišta zategnute armature ($\varepsilon_{c2} = 3.5$‰, $\alpha_v = 0.81$, $k_a = 0.416$):
+
+\begin{align*}
+M_{Edu} &= 0.81 \cdot \xi \cdot (1 - 0.416 \cdot \xi) \cdot b \cdot d^2 \cdot f_{cd} \quad \Rightarrow \quad a \cdot \xi^2 + b' \cdot \xi + c = 0 \\
+K &= b \cdot d^2 \cdot f_{cd} = \VAR{m.b|n(3)} \cdot \VAR{m.d|n(3)}^2 \cdot \VAR{m.fcd|n} \cdot 10^3 = \VAR{k.K|n} \ \mathrm{kNm} \\
+a &= -0.33696 \cdot K = \VAR{k.a|n}, \qquad b' = 0.81 \cdot K = \VAR{k.be|n}, \qquad c = -M_{Edu} = \VAR{k.c|n} \\
+D &= b'^2 - 4 \cdot a \cdot c = \VAR{k.be|n}^2 - 4 \cdot \VAR{k.a|n} \cdot \VAR{k.c|n} = \VAR{k.disk|n(0)}
+\end{align*}
+
+\begin{align*}
+D &\geq 0 \\
+\VAR{k.disk|n(0)} &\geq 0 \quad \VAR{uslov(k.disk >= 0)}
+\end{align*}
+
+\BLOCK{if k.disk < 0}
+Jednačina nema realno rešenje: jednostruko armiran presek ne može da primi moment $M_{Edu}$, pa je potrebno dvojno armiranje.
+\BLOCK{else}
+\begin{align*}
+\xi &= \frac{-b' + \sqrt{D}}{2 \cdot a} = \frac{-\VAR{k.be|n} + \sqrt{\VAR{k.disk|n(0)}}}{2 \cdot \VAR{k.a|n}} = \VAR{k.ksi|n(4)}, \qquad x = \xi \cdot d = \VAR{(k.ksi*m.d*100)|n(2)} \ \mathrm{cm} \\
+\varepsilon_{s1} &= \frac{1 - \xi}{\xi} \cdot 3.5 = \frac{1 - \VAR{k.ksi|n(4)}}{\VAR{k.ksi|n(4)}} \cdot 3.5 = \VAR{k.es1|n(2)} \ \text{‰} \\
+A_{s1} &= 0.81 \cdot \xi \cdot \frac{f_{cd}}{f_{yd}} \cdot b \cdot d - \frac{N_{Ed}}{f_{yd}} = 0.81 \cdot \VAR{k.ksi|n(4)} \cdot \frac{\VAR{m.fcd|n}}{\VAR{m.fyd|n}} \cdot \VAR{(m.b*100)|n(1)} \cdot \VAR{(m.d*100)|n(1)} - \frac{\VAR{m.NEd|n}}{\VAR{m.fyd|n} \cdot 10^{-1}} = \VAR{k.As1|n} \ \mathrm{cm^2}
+\end{align*}
+
+\begin{align*}
+A_{s1} &\geq 0 \\
+\VAR{k.As1|n} &\geq 0 \quad \VAR{uslov(k.As1 >= 0)}
+\end{align*}
+
+\BLOCK{if k.As1 < 0}
+Zategnuta armatura nije potrebna, ceo presek je pritisnut: proračun se nastavlja kao mali ekscentricitet.
+\BLOCK{else}
+\begin{align*}
+|\varepsilon_{s1}| &> 2.5 \ \text{‰} \\
+\VAR{(k.es1|abs)|n(2)} &> 2.5 \quad \VAR{uslov(k.es1|abs > 2.5)}
+\end{align*}
+
+\BLOCK{if k.es1|abs <= 2.5}
+Zategnuta armatura ne teče dovoljno, pa je potrebno dvojno armiranje.
+\BLOCK{else}
+Minimalna i maksimalna površina zategnute armature:
+
+\begin{align*}
+A_{s,min} &= \max\left(0.26 \cdot \frac{f_{ctm}}{f_{yk}} \cdot b_w \cdot d;\ 0.0013 \cdot b_w \cdot d\right) \\
+&= \max\left(0.26 \cdot \frac{\VAR{m.fctm|n}}{\VAR{m.fyk}} \cdot \VAR{(m.brebra*100)|n(1)} \cdot \VAR{(m.d*100)|n(1)};\ 0.0013 \cdot \VAR{(m.brebra*100)|n(1)} \cdot \VAR{(m.d*100)|n(1)}\right) = \VAR{k.AsMin|n} \ \mathrm{cm^2} \\
+A_{s,max} &= 0.473 \cdot b \cdot d \cdot \frac{f_{cd}}{f_{yd}} = 0.473 \cdot \VAR{(m.b*100)|n(1)} \cdot \VAR{(m.d*100)|n(1)} \cdot \frac{\VAR{m.fcd|n}}{\VAR{m.fyd|n}} = \VAR{k.AsMax|n} \ \mathrm{cm^2}
+\end{align*}
+
+\begin{align*}
+A_{s1} &\geq A_{s,min} \\
+\VAR{k.As1|n} &\geq \VAR{k.AsMin|n} \quad \VAR{uslov(k.As1 >= k.AsMin)}
+\end{align*}
+
+\BLOCK{if k.As1 < k.AsMin}
+Usvaja se minimalna armatura $A_{s1} = A_{s,min} = \VAR{k.AsMin|n} \ \mathrm{cm^2}$. Za veliku silu pritiska i mali moment je možda potrebno dimenzionisanje pomoću dijagrama interakcije.
+\BLOCK{else}
+\begin{align*}
+A_{s1} &\leq A_{s,max} \\
+\VAR{k.As1|n} &\leq \VAR{k.AsMax|n} \quad \VAR{kontrola(k.As1 <= k.AsMax)}
+\end{align*}
+\BLOCK{endif}
+\BLOCK{endif}
+\BLOCK{endif}
+\BLOCK{endif}
+
+\BLOCK{elif ime == 'dvojno'}
+\subsection{Dvojno armiranje}
+
+Zategnuta armatura se dimenzioniše za granični položaj neutralne linije $\xi_{lim} = \VAR{k.ksi|n(3)}$ ($\varepsilon_{s1} = 2.5$‰), a ostatak momenta prima pritisnuta armatura:
+
+\begin{align*}
+M_{lim} &= \left(\frac{d}{1.672}\right)^2 \cdot b \cdot f_{cd} = \left(\frac{\VAR{m.d|n(3)}}{1.672}\right)^2 \cdot \VAR{m.b|n(3)} \cdot \VAR{m.fcd|n} \cdot 10^3 = \VAR{k.Mlim|n} \ \mathrm{kNm} \\
+\Delta M &= M_{Edu} - M_{lim} = \VAR{m.MEdu|n} - \VAR{k.Mlim|n} = \VAR{k.dM|n} \ \mathrm{kNm} \\
+A_{s2} &= \frac{\Delta M}{(d - d_2) \cdot f_{yd}} = \frac{\VAR{k.dM|n}}{(\VAR{m.d|n(3)} - \VAR{m.d2|n(3)}) \cdot \VAR{m.fyd|n} \cdot 10^{-1}} = \VAR{k.As2|n} \ \mathrm{cm^2} \\
+A_{s1} &= 0.81 \cdot \xi_{lim} \cdot \frac{f_{cd}}{f_{yd}} \cdot b \cdot d - \frac{N_{Ed}}{f_{yd}} + A_{s2} = \VAR{k.As1|n} \ \mathrm{cm^2}
+\end{align*}
+
+\begin{align*}
+A_{s2} &\leq A_{s1} \\
+\VAR{k.As2|n} &\leq \VAR{k.As1|n} \quad \VAR{uslov(k.As2 <= k.As1)}
+\end{align*}
+
+\BLOCK{if k.As2 > k.As1}
+Pritisnuta armatura je veća od zategnute: ceo presek je pritisnut, proračun se nastavlja kao mali ekscentricitet.
+\BLOCK{endif}
+
+\BLOCK{elif ime == 'mali'}
+\subsection{Mali ekscentricitet --- simetrično armiran presek}
+
+Ceo presek je pritisnut. Armatura je simetrična ($A_{s1} = A_{s2}$, $d_2 = d_1$):
+
+\begin{align*}
+\nu_{Ed} &= \frac{N_{Ed}}{b \cdot h \cdot f_{cd}} = \VAR{k.nu|n(3)}, \qquad \mu_{Ed} = \frac{M_{Ed}}{b \cdot h^2 \cdot f_{cd}} = \VAR{k.mu|n(3)}
+\end{align*}
+
+Za dilataciju na pritisnutijoj ivici $\varepsilon_{c2}$ od 2‰ do 3.5‰ (obrtanje oko tačke na $\tfrac{3}{7} h$, EN 1992-1-1, Slika 6.1) traži se prvo stanje u kome je ravnoteža moguća sa $0 \leq A_{s1}, A_{s2} \leq 0.04 \cdot b \cdot h$:
+
+\begin{align*}
+\beta_3 &= \frac{125 + 64 \cdot \varepsilon_{c2} - 16 \cdot \varepsilon_{c2}^2}{189}, \qquad \beta_4 = \frac{3}{14} \cdot \frac{(8 \cdot \varepsilon_{c2} + 5) \cdot (37 - 8 \cdot \varepsilon_{c2})}{125 + 64 \cdot \varepsilon_{c2} - 16 \cdot \varepsilon_{c2}^2}, \qquad F_c = \beta_3 \cdot b \cdot h \cdot f_{cd} \\
+\varepsilon_{s1} &= \frac{2 \cdot (1 - \alpha_1) - \varepsilon_{c2} \cdot (4/7 - \alpha_1)}{3/7} \leq \varepsilon_{yd}, \qquad \varepsilon_{s2} = \frac{2 \cdot \alpha_2 + \varepsilon_{c2} \cdot (3/7 - \alpha_2)}{3/7} \leq \varepsilon_{yd}, \qquad \alpha_i = \frac{d_i}{h} \\
+\sum M_{As1} &= 0: \quad F_c \cdot (d - \beta_4 \cdot h) + A_{s2} \cdot \sigma_{s2} \cdot (d - d_1) = M_{Edu} \\
+\sum N &= 0: \quad F_c + A_{s1} \cdot \sigma_{s1} + A_{s2} \cdot \sigma_{s2} = N_{Ed}
+\end{align*}
+
+\BLOCK{if k.resenje}
+Prvo stanje sa rešenjem: $\varepsilon_{c2} = \VAR{k.ec2|n(3)}$‰.
+
+\begin{align*}
+\beta_3 &= \VAR{k.beta3|n(4)}, \qquad \beta_4 = \VAR{k.beta4|n(4)}, \qquad F_c = \VAR{k.beta3|n(4)} \cdot \VAR{m.b|n(3)} \cdot \VAR{m.h|n(3)} \cdot \VAR{m.fcd|n} \cdot 10^3 = \VAR{k.Fc|n} \ \mathrm{kN} \\
+\varepsilon_{s1} &= \VAR{k.es1|n(3)} \ \text{‰}, \quad \sigma_{s1} = \VAR{k.sigmas1|n} \ \mathrm{MPa}, \qquad \varepsilon_{s2} = \VAR{k.es2|n(3)} \ \text{‰}, \quad \sigma_{s2} = \VAR{k.sigmas2|n} \ \mathrm{MPa} \\
+A_{s2} &= \frac{M_{Edu} - F_c \cdot (d - \beta_4 \cdot h)}{\sigma_{s2} \cdot (d - d_1)} = \frac{\VAR{k.MEdu|n} - \VAR{k.Fc|n} \cdot (\VAR{m.d|n(3)} - \VAR{k.beta4|n(4)} \cdot \VAR{m.h|n(3)})}{\VAR{k.sigmas2|n} \cdot 10^3 \cdot (\VAR{m.d|n(3)} - \VAR{m.d1|n(3)})} = \VAR{k.As2_r|n} \ \mathrm{cm^2} \\
+A_{s1} &= \frac{N_{Ed} - F_c - A_{s2} \cdot \sigma_{s2}}{\sigma_{s1}} = \VAR{k.As1_r|n} \ \mathrm{cm^2} \\
+A_{s1} &= A_{s2} = \max(\VAR{k.As1_r|n};\ \VAR{k.As2_r|n}) = \VAR{k.As|n} \ \mathrm{cm^2}
+\end{align*}
+\BLOCK{else}
+\begin{align*}
+0 \leq A_{s1}, A_{s2} &\leq 0.04 \cdot b \cdot h \quad \VAR{kontrola(False)}
+\end{align*}
+
+Ni za jedno stanje dilatacija ravnoteža nije moguća sa simetričnom pritisnutom armaturom do 4\% površine preseka: postoji i zategnuta armatura, ili je potrebno više armature. Potrebno je dimenzionisanje pomoću dijagrama interakcije.
+\BLOCK{endif}
+\BLOCK{endif}
+\BLOCK{endfor}
+
+\subsection{Zaključak}
+
+\textbf{Greda \VAR{naziv|tex}:}
+\BLOCK{if r.slucaj == 'jednostruko'}
+Potrebna je zategnuta armatura $A_{s1} = \VAR{r.As1|n} \ \mathrm{cm^2}$ ($\xi = \VAR{r.ksi|n(3)}$, $x = \VAR{(r.x*100)|n(2)} \ \mathrm{cm}$).
+\BLOCK{elif r.slucaj == 'minimalna'}
+Usvaja se minimalna zategnuta armatura $A_{s1} = A_{s,min} = \VAR{r.AsMin|n} \ \mathrm{cm^2}$.
+\BLOCK{elif r.slucaj == 'maksimalna'}
+\textbf{Potrebna zategnuta armatura $A_{s1} = \VAR{r.As1|n} \ \mathrm{cm^2}$ je veća od maksimalne $A_{s,max} = \VAR{r.AsMax|n} \ \mathrm{cm^2}$.} Potrebno je povećati presek ili marku betona.
+\BLOCK{elif r.slucaj == 'dvojno'}
+Dvojno armiranje: zategnuta armatura $A_{s1} = \VAR{r.As1|n} \ \mathrm{cm^2}$, pritisnuta armatura $A_{s2} = \VAR{r.As2|n} \ \mathrm{cm^2}$.
+\BLOCK{elif r.slucaj == 'mali_ekscentricitet'}
+Simetrična armatura $A_{s1} = A_{s2} = \VAR{r.As1|n} \ \mathrm{cm^2}$ (ukupno $A_s = \VAR{r.As|n} \ \mathrm{cm^2}$).
+\BLOCK{elif r.slucaj == 'mali_bez_resenja'}
+\textbf{Rešenje sa simetričnom pritisnutom armaturom ne postoji.} Presek treba dimenzionisati pomoću dijagrama interakcije.
+\BLOCK{elif r.slucaj == 'zatezanje'}
+\BLOCK{if r.As1 is defined}
+Zatezanje: $A_{s1} = \VAR{r.As1|n} \ \mathrm{cm^2}$, $A_{s2} = \VAR{r.As2|n} \ \mathrm{cm^2}$ (ukupno $\VAR{r.As|n} \ \mathrm{cm^2}$).
+\BLOCK{else}
+Centrično zatezanje: ukupna armatura $A_s = \VAR{r.As|n} \ \mathrm{cm^2}$.
+\BLOCK{endif}
+\BLOCK{elif r.slucaj == 'centricni'}
+Centrični pritisak: ukupna armatura $A_s = \VAR{r.As|n} \ \mathrm{cm^2}$.
+\BLOCK{elif r.slucaj == 'centricni_prekoracen'}
+\textbf{Napon u betonu je veći od proračunske čvrstoće $f_{cd}$}; potrebno je povećati presek ili marku betona.
+\BLOCK{else}
+Presek nije opterećen.
+\BLOCK{endif}
+
+%% ---- KRAJ PRORACUNA ----
+
+\end{document}

@@ -1,0 +1,172 @@
+\BLOCK{include '_preamble.tex'}
+
+\begin{document}
+\maketitle
+
+%% ---- POCETAK PRORACUNA ----
+\subsection{Ulazni parametri}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|l|c|c|}
+\hline
+Oznaka & Opis & Vrednost & Jedinica \\
+\hline
+$V_{Ed}$ & Proračunska sila smicanja & \VAR{m.VEd|n} & kN \\
+\hline
+$b_w$ & Najmanja širina preseka u zategnutoj zoni & \VAR{(m.b*100)|n(1)} & cm \\
+\hline
+$h$ & Visina preseka & \VAR{(m.h*100)|n(1)} & cm \\
+\hline
+$d_1$ & Položaj zategnute armature & \VAR{(m.d1*100)|n(1)} & cm \\
+\hline
+$f_{ck}$ & Karakteristična čvrstoća betona & \VAR{m.fck} & MPa \\
+\hline
+$A_{sl}$ & Zategnuta podužna armatura & \VAR{(m.Asl*1e4)|n} & cm$^2$ \\
+\hline
+$m$ & Sečnost uzengija & \VAR{m.m|n(0)} & -- \\
+\hline
+\end{tabular}
+\caption{Ulazni parametri grede \VAR{naziv|tex}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=0.32\textheight]{\VAR{slike.presek}}
+\caption{Poprečni presek sa oznakama}
+\end{figure}
+
+\subsection{Materijal i geometrija}
+
+Nagib pritisnutih dijagonala $\theta = 45^\circ$ ($\cot\theta = 1$), vertikalne uzengije ($\alpha = 90^\circ$).
+
+\begin{align*}
+f_{cd} &= \frac{0.85 \cdot f_{ck}}{1.5} = \frac{0.85 \cdot \VAR{m.fck}}{1.5} = \VAR{m.fcd|n} \ \mathrm{MPa}, \qquad f_{ywd} = f_{yd} = \frac{f_{yk}}{1.15} = \frac{\VAR{m.fyk}}{1.15} = \VAR{m.fyd|n} \ \mathrm{MPa} \\
+d &= h - d_1 = \VAR{(m.h*100)|n(1)} - \VAR{(m.d1*100)|n(1)} = \VAR{(m.d*100)|n(1)} \ \mathrm{cm}, \qquad z = 0.9 \cdot d = 0.9 \cdot \VAR{(m.d*100)|n(1)} = \VAR{(m.z*100)|n(2)} \ \mathrm{cm}
+\end{align*}
+
+\subsection{Nosivost elementa bez računske armature za smicanje}
+
+Prema EN 1992-1-1, 6.2.2(1):
+
+\begin{align*}
+k &= 1 + \sqrt{\frac{200}{d}} \leq 2.0 \quad \Rightarrow \quad k = \min\left(1 + \sqrt{\frac{200}{\VAR{(m.d*1000)|n(0)}}};\ 2.0\right) = \VAR{m.k|n(3)} \\
+\rho_l &= \frac{A_{sl}}{b_w \cdot d} \leq 0.02 \quad \Rightarrow \quad \rho_l = \min\left(\frac{\VAR{(m.Asl*1e4)|n}}{\VAR{(m.b*100)|n(1)} \cdot \VAR{(m.d*100)|n(1)}};\ 0.02\right) = \VAR{m.rho_l|n(5)} \\
+V_{Rd,c1} &= C_{Rd,c} \cdot k \cdot (100 \cdot \rho_l \cdot f_{ck})^{1/3} \cdot b_w \cdot d, \qquad C_{Rd,c} = \frac{0.18}{\gamma_c} = \VAR{m.CRd_c|n(3)} \\
+V_{Rd,c1} &= \VAR{m.CRd_c|n(3)} \cdot \VAR{m.k|n(3)} \cdot (100 \cdot \VAR{m.rho_l|n(5)} \cdot \VAR{m.fck})^{1/3} \cdot \VAR{m.b|n(3)} \cdot \VAR{m.d|n(3)} \cdot 10^3 = \VAR{m.VRd_c1|n} \ \mathrm{kN} \\
+v_{min} &= 0.035 \cdot k^{3/2} \cdot f_{ck}^{1/2} = 0.035 \cdot \VAR{m.k|n(3)}^{3/2} \cdot \VAR{m.fck}^{1/2} = \VAR{m.v_min|n(3)} \ \mathrm{MPa} \\
+V_{Rd,c,min} &= v_{min} \cdot b_w \cdot d = \VAR{m.v_min|n(3)} \cdot \VAR{m.b|n(3)} \cdot \VAR{m.d|n(3)} \cdot 10^3 = \VAR{m.VRd_c_min|n} \ \mathrm{kN} \\
+V_{Rd,c} &= \max(V_{Rd,c1};\ V_{Rd,c,min}) = \max(\VAR{m.VRd_c1|n};\ \VAR{m.VRd_c_min|n}) = \VAR{r.VRd_c|n} \ \mathrm{kN}
+\end{align*}
+
+\subsection{Nosivost pritisnutih betonskih dijagonala}
+
+Prema EN 1992-1-1, izraz (6.9), sa $\alpha_{cw} = 1$ i $\nu_1 = \nu$ (6.6N):
+
+\begin{align*}
+\nu_1 &= 0.6 \cdot \left(1 - \frac{f_{ck}}{250}\right) = 0.6 \cdot \left(1 - \frac{\VAR{m.fck}}{250}\right) = \VAR{m.ni_1|n(3)} \\
+V_{Rd,max} &= \frac{\alpha_{cw} \cdot b_w \cdot z \cdot \nu_1 \cdot f_{cd}}{\cot\theta + \tan\theta} = \frac{\VAR{m.b|n(3)} \cdot \VAR{m.z|n(4)} \cdot \VAR{m.ni_1|n(3)} \cdot \VAR{m.fcd|n} \cdot 10^3}{1 + 1} = \VAR{r.VRd_max|n} \ \mathrm{kN}
+\end{align*}
+
+\begin{align*}
+V_{Ed} &\leq V_{Rd,max} \\
+\VAR{m.VEd|n} &\leq \VAR{r.VRd_max|n} \quad \VAR{kontrola(r.slucaj != 'prekoracenje')}
+\end{align*}
+
+\BLOCK{if r.slucaj != 'prekoracenje'}
+\begin{align*}
+V_{Ed} &\leq V_{Rd,c} \\
+\VAR{m.VEd|n} &\leq \VAR{r.VRd_c|n} \quad \VAR{uslov(r.slucaj == 'minimalna')}
+\end{align*}
+
+\BLOCK{if r.slucaj == 'minimalna'}
+Računska armatura za smicanje nije potrebna; usvaja se najmanje minimalna armatura (9.2.2(5)).
+\BLOCK{else}
+Potrebna je računska armatura za smicanje (6.2.3).
+\BLOCK{endif}
+
+\subsection{Rastojanje uzengija}
+
+Rastojanje računske armature, izraz (6.8), i najveće rastojanje za minimalni procenat armiranja, izrazi (9.4) i (9.5N):
+
+\begin{align*}
+s_{rac} &= \frac{m \cdot A_{sw1} \cdot z \cdot f_{ywd} \cdot \cot\theta}{V_{Ed}}, \qquad s_{w,min} = \frac{m \cdot A_{sw1}}{\rho_{w,min} \cdot b_w} \\
+\rho_{w,min} &= \frac{0.08 \cdot \sqrt{f_{ck}}}{f_{yk}} = \frac{0.08 \cdot \sqrt{\VAR{m.fck}}}{\VAR{m.fyk}} = \VAR{m.rho_w_min|n(6)}
+\end{align*}
+
+\BLOCK{set gornja = 30 if m.fck <= 50 else 20}
+Najveće podužno rastojanje uzengija (za $V_{Ed}/V_{Rd,max} = \VAR{(m.VEd/r.VRd_max)|n(3)}$):
+
+\begin{align*}
+\BLOCK{if m.VEd <= 0.3*r.VRd_max}
+s_{l,max} &= \min(0.75 \cdot d;\ \VAR{gornja} \ \mathrm{cm}) = \min(\VAR{(0.75*m.d*100)|n(2)};\ \VAR{gornja}) = \VAR{(r.sl_max*100)|n(2)} \ \mathrm{cm}
+\BLOCK{elif m.VEd <= 0.6*r.VRd_max}
+s_{l,max} &= \min(0.55 \cdot d;\ \VAR{gornja} \ \mathrm{cm}) = \min(\VAR{(0.55*m.d*100)|n(2)};\ \VAR{gornja}) = \VAR{(r.sl_max*100)|n(2)} \ \mathrm{cm}
+\BLOCK{else}
+s_{l,max} &= \min(0.3 \cdot d;\ 20 \ \mathrm{cm}) = \min(\VAR{(0.3*m.d*100)|n(2)};\ 20) = \VAR{(r.sl_max*100)|n(2)} \ \mathrm{cm}
+\BLOCK{endif}
+\end{align*}
+
+Potrebno rastojanje $s = \min(s_{rac};\ s_{w,min};\ s_{l,max})$ za uzengije sečnosti $m = \VAR{m.m|n(0)}$:
+
+\BLOCK{for u in r.uzengije}
+\begin{align*}
+\phi \VAR{u.fi}: \quad A_{sw1} &= \VAR{(u.Asw1*1e4)|n(3)} \ \mathrm{cm^2} \\
+s_{rac} &= \frac{\VAR{m.m|n(0)} \cdot \VAR{(u.Asw1*1e4)|n(3)} \cdot \VAR{(m.z*100)|n(2)} \cdot \VAR{m.fyd|n} \cdot 1}{\VAR{m.VEd|n} \cdot 10} = \VAR{(u.s_rac*100)|n(2)} \ \mathrm{cm}, \qquad s_{w,min} = \frac{\VAR{m.m|n(0)} \cdot \VAR{(u.Asw1*1e4)|n(3)}}{\VAR{m.rho_w_min|n(6)} \cdot \VAR{(m.b*100)|n(1)}} = \VAR{(u.s_min*100)|n(2)} \ \mathrm{cm} \\
+s &= \min(\VAR{(u.s_rac*100)|n(2)};\ \VAR{(u.s_min*100)|n(2)};\ \VAR{(r.sl_max*100)|n(2)}) = \VAR{(u.s*100)|n(2)} \ \mathrm{cm}
+\end{align*}
+\BLOCK{endfor}
+
+Najveće poprečno rastojanje krakova uzengija:
+
+\begin{align*}
+\BLOCK{if m.VEd <= 0.6*r.VRd_max}
+s_{t,max} &= \min(0.75 \cdot d;\ \VAR{60 if m.fck <= 50 else 40} \ \mathrm{cm}) = \min(\VAR{(0.75*m.d*100)|n(2)};\ \VAR{60 if m.fck <= 50 else 40}) = \VAR{(r.st_max*100)|n(2)} \ \mathrm{cm}
+\BLOCK{else}
+s_{t,max} &= \min(0.3 \cdot d;\ 30 \ \mathrm{cm}) = \min(\VAR{(0.3*m.d*100)|n(2)};\ 30) = \VAR{(r.st_max*100)|n(2)} \ \mathrm{cm}
+\BLOCK{endif}
+\end{align*}
+
+\subsection{Dodatna zategnuta armatura}
+
+Dodatna sila zatezanja u podužnoj armaturi, izraz (6.18):
+
+\begin{align*}
+\Delta F_{td} &= 0.5 \cdot V_{Ed} \cdot (\cot\theta - \cot\alpha) = 0.5 \cdot \VAR{m.VEd|n} \cdot (1 - 0) = \VAR{r.delta_Ftd|n} \ \mathrm{kN} \\
+\Delta A_{s1} &= \frac{\Delta F_{td}}{f_{yd}} = \frac{\VAR{r.delta_Ftd|n}}{\VAR{m.fyd|n} \cdot 10^{-1}} = \VAR{(r.delta_As1*1e4)|n} \ \mathrm{cm^2}
+\end{align*}
+\BLOCK{endif}
+
+\subsection{Zaključak}
+
+\textbf{Greda \VAR{naziv|tex}:}
+\BLOCK{if r.slucaj == 'prekoracenje'}
+\textbf{Prekoračena je nosivost pritisnutih betonskih dijagonala} ($V_{Ed} = \VAR{m.VEd|n} \ \mathrm{kN} > V_{Rd,max} = \VAR{r.VRd_max|n} \ \mathrm{kN}$). Potrebno je povećati presek ili marku betona.
+\BLOCK{else}
+\BLOCK{if r.slucaj == 'minimalna'}
+računska armatura za smicanje nije potrebna, usvaja se minimalna.
+\BLOCK{else}
+potrebna je računska armatura za smicanje.
+\BLOCK{endif}
+Najveća rastojanja uzengija sečnosti $m = \VAR{m.m|n(0)}$:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+Uzengije & $A_{sw1}$ [cm$^2$] & $s$ [cm] \\
+\hline
+\BLOCK{for u in r.uzengije}
+$\phi \VAR{u.fi}$ & \VAR{(u.Asw1*1e4)|n(3, zagrada=False)} & \VAR{(u.s*100)|n(2, zagrada=False)} \\
+\hline
+\BLOCK{endfor}
+\end{tabular}
+\caption{Potrebno rastojanje uzengija}
+\end{table}
+
+Poprečno rastojanje krakova $s_{t,max} = \VAR{(r.st_max*100)|n(2)} \ \mathrm{cm}$; dodatna zategnuta armatura $\Delta A_{s1} = \VAR{(r.delta_As1*1e4)|n} \ \mathrm{cm^2}$.
+\BLOCK{endif}
+
+%% ---- KRAJ PRORACUNA ----
+
+\end{document}
